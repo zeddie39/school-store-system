@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '../auth/LoginForm';
+import type { Database } from '@/integrations/supabase/types';
 import { 
   School, 
   LogOut, 
@@ -14,13 +15,16 @@ import {
   Package
 } from 'lucide-react';
 
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
 interface NavigationProps {
   userRole: UserRole;
   userEmail: string;
+  userProfile: Profile;
   onLogout: () => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, onLogout }) => {
+const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfile, onLogout }) => {
   const getNavItems = () => {
     const commonItems = [
       { icon: Home, label: 'Dashboard', path: '/' },
@@ -40,7 +44,7 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, onLogout }
       teacher: [
         { icon: FileText, label: 'Approvals', path: '/approvals' }
       ],
-      procurement: [
+      procurement_officer: [
         { icon: Package, label: 'Procurement', path: '/procurement' },
         { icon: FileText, label: 'Orders', path: '/orders' }
       ],
@@ -58,7 +62,7 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, onLogout }
       admin: 'Administrator',
       storekeeper: 'Store Keeper',
       teacher: 'Department Teacher',
-      procurement: 'Procurement Officer',
+      procurement_officer: 'Procurement Officer',
       bursar: 'Bursar'
     };
     return roleNames[role];
@@ -69,7 +73,7 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, onLogout }
       admin: 'role-badge role-badge-admin',
       storekeeper: 'role-badge role-badge-storekeeper',
       teacher: 'role-badge role-badge-teacher',
-      procurement: 'role-badge role-badge-procurement',
+      procurement_officer: 'role-badge role-badge-procurement',
       bursar: 'role-badge role-badge-bursar'
     };
     return roleClasses[role];
@@ -111,7 +115,7 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, onLogout }
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-sm font-medium text-sidebar-foreground">
-                  {userEmail}
+                  {userProfile.full_name}
                 </p>
                 <div className={getRoleBadgeClass(userRole)}>
                   {getRoleDisplayName(userRole)}

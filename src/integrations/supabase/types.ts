@@ -14,16 +14,333 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      approvals: {
+        Row: {
+          approved_by: string
+          comments: string | null
+          created_at: string | null
+          id: string
+          request_id: string
+          status: Database["public"]["Enums"]["request_status"]
+        }
+        Insert: {
+          approved_by: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          request_id: string
+          status: Database["public"]["Enums"]["request_status"]
+        }
+        Update: {
+          approved_by?: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          request_id?: string
+          status?: Database["public"]["Enums"]["request_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approvals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "stock_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items: {
+        Row: {
+          added_by: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          minimum_stock: number | null
+          name: string
+          quantity: number
+          store_id: string
+          unit: string
+          updated_at: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          minimum_stock?: number | null
+          name: string
+          quantity?: number
+          store_id: string
+          unit?: string
+          updated_at?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          minimum_stock?: number | null
+          name?: string
+          quantity?: number
+          store_id?: string
+          unit?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurements: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_id: string
+          procured_by: string
+          procurement_date: string | null
+          quantity: number
+          request_id: string | null
+          supplier: string | null
+          total_cost: number | null
+          unit_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_id: string
+          procured_by: string
+          procurement_date?: string | null
+          quantity: number
+          request_id?: string | null
+          supplier?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          procured_by?: string
+          procurement_date?: string | null
+          quantity?: number
+          request_id?: string | null
+          supplier?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurements_procured_by_fkey"
+            columns: ["procured_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurements_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "stock_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email: string
+          full_name: string
+          id: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      stock_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          item_id: string
+          quantity: number
+          reason: string | null
+          request_type: Database["public"]["Enums"]["request_type"]
+          requested_by: string
+          status: Database["public"]["Enums"]["request_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          item_id: string
+          quantity: number
+          reason?: string | null
+          request_type: Database["public"]["Enums"]["request_type"]
+          requested_by: string
+          status?: Database["public"]["Enums"]["request_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          quantity?: number
+          reason?: string | null
+          request_type?: Database["public"]["Enums"]["request_type"]
+          requested_by?: string
+          status?: Database["public"]["Enums"]["request_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_requests_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          location: string | null
+          manager_id: string | null
+          name: string
+          store_type: Database["public"]["Enums"]["store_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          manager_id?: string | null
+          name: string
+          store_type: Database["public"]["Enums"]["store_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          manager_id?: string | null
+          name?: string
+          store_type?: Database["public"]["Enums"]["store_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      request_status: "pending" | "approved" | "rejected" | "completed"
+      request_type: "add_stock" | "remove_stock" | "transfer_stock"
+      store_type:
+        | "library"
+        | "laboratory"
+        | "kitchen"
+        | "sports"
+        | "ict_lab"
+        | "boarding"
+        | "examination"
+        | "agriculture"
+        | "general"
+      user_role:
+        | "admin"
+        | "storekeeper"
+        | "teacher"
+        | "procurement_officer"
+        | "bursar"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +467,27 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      request_status: ["pending", "approved", "rejected", "completed"],
+      request_type: ["add_stock", "remove_stock", "transfer_stock"],
+      store_type: [
+        "library",
+        "laboratory",
+        "kitchen",
+        "sports",
+        "ict_lab",
+        "boarding",
+        "examination",
+        "agriculture",
+        "general",
+      ],
+      user_role: [
+        "admin",
+        "storekeeper",
+        "teacher",
+        "procurement_officer",
+        "bursar",
+      ],
+    },
   },
 } as const

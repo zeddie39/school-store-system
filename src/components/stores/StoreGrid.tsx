@@ -18,125 +18,71 @@ import {
   Plus
 } from 'lucide-react';
 import { UserRole } from '../auth/LoginForm';
+import { useStores } from '@/hooks/useStores';
+import { useItems } from '@/hooks/useItems';
+import type { Database } from '@/integrations/supabase/types';
 
 interface StoreGridProps {
   userRole: UserRole;
 }
 
-interface StoreInfo {
-  id: string;
-  name: string;
-  type: string;
-  icon: React.ComponentType<any>;
-  itemCount: number;
-  lastUpdated: string;
-  status: 'active' | 'low-stock' | 'maintenance';
-  manager: string;
-  description: string;
-}
+type Store = Database['public']['Tables']['stores']['Row'];
 
 const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
-  const stores: StoreInfo[] = [
-    {
-      id: 'library',
-      name: 'Library Store',
-      type: 'Educational',
-      icon: BookOpen,
-      itemCount: 1250,
-      lastUpdated: '2 hours ago',
-      status: 'active',
-      manager: 'Sarah Johnson',
-      description: 'Books, journals, and educational materials'
-    },
-    {
-      id: 'laboratory',
-      name: 'Laboratory Store',
-      type: 'Scientific',
-      icon: Beaker,
-      itemCount: 487,
-      lastUpdated: '4 hours ago',
-      status: 'low-stock',
-      manager: 'Dr. Michael Chen',
-      description: 'Lab equipment and scientific instruments'
-    },
-    {
-      id: 'kitchen',
-      name: 'Kitchen Store',
-      type: 'Food Service',
-      icon: ChefHat,
-      itemCount: 325,
-      lastUpdated: '1 hour ago',
-      status: 'active',
-      manager: 'Maria Rodriguez',
-      description: 'Kitchen supplies and food items'
-    },
-    {
-      id: 'sports',
-      name: 'Sports Store',
-      type: 'Athletic',
-      icon: Dumbbell,
-      itemCount: 198,
-      lastUpdated: '6 hours ago',
-      status: 'active',
-      manager: 'Coach Thompson',
-      description: 'Sports equipment and athletic gear'
-    },
-    {
-      id: 'ict',
-      name: 'ICT Lab',
-      type: 'Technology',
-      icon: Monitor,
-      itemCount: 156,
-      lastUpdated: '3 hours ago',
-      status: 'maintenance',
-      manager: 'Tech Team',
-      description: 'Computer equipment and IT supplies'
-    },
-    {
-      id: 'boarding',
-      name: 'Boarding Store',
-      type: 'Residential',
-      icon: Home,
-      itemCount: 234,
-      lastUpdated: '5 hours ago',
-      status: 'active',
-      manager: 'House Keeper',
-      description: 'Boarding house supplies and materials'
-    },
-    {
-      id: 'examination',
-      name: 'Examination Store',
-      type: 'Academic',
-      icon: Calculator,
-      itemCount: 89,
-      lastUpdated: '1 day ago',
-      status: 'active',
-      manager: 'Exam Officer',
-      description: 'Examination materials and stationery'
-    },
-    {
-      id: 'agriculture',
-      name: 'Agriculture Store',
-      type: 'Agricultural',
-      icon: Truck,
-      itemCount: 167,
-      lastUpdated: '8 hours ago',
-      status: 'active',
-      manager: 'Farm Manager',
-      description: 'Agricultural tools and supplies'
-    },
-    {
-      id: 'general',
-      name: 'General Store',
-      type: 'Miscellaneous',
-      icon: Package,
-      itemCount: 456,
-      lastUpdated: '2 hours ago',
-      status: 'active',
-      manager: 'General Manager',
-      description: 'General supplies and miscellaneous items'
+  const { stores, loading } = useStores();
+  const { items } = useItems();
+
+  const getStoreIcon = (storeType: string) => {
+    switch (storeType) {
+      case 'library': return BookOpen;
+      case 'laboratory': return Beaker;
+      case 'kitchen': return ChefHat;
+      case 'sports': return Dumbbell;
+      case 'ict_lab': return Monitor;
+      case 'boarding': return Home;
+      case 'examination': return Calculator;
+      case 'agriculture': return Truck;
+      case 'general': return Package;
+      default: return Package;
     }
-  ];
+  };
+
+  const getItemCount = (storeId: string) => {
+    return items.filter(item => item.store_id === storeId).length;
+  };
+
+  const getStoreStatus = (storeId: string) => {
+    const storeItems = items.filter(item => item.store_id === storeId);
+    const lowStockItems = storeItems.filter(item => 
+      item.minimum_stock && item.quantity <= item.minimum_stock
+    );
+    
+    if (lowStockItems.length > storeItems.length * 0.3) {
+      return 'low-stock';
+    }
+    return 'active';
+  };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+              <div className="h-3 bg-muted rounded w-1/2"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="h-3 bg-muted rounded"></div>
+                <div className="h-3 bg-muted rounded w-2/3"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -163,7 +109,10 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {stores.map((store) => {
-        const IconComponent = store.icon;
+        const IconComponent = getStoreIcon(store.store_type);
+        const itemCount = getItemCount(store.id);
+        const status = getStoreStatus(store.id);
+        
         return (
           <Card key={store.id} className="store-card">
             <CardHeader className="pb-3">
@@ -174,32 +123,32 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
                   </div>
                   <div>
                     <CardTitle className="text-lg">{store.name}</CardTitle>
-                    <CardDescription>{store.type}</CardDescription>
+                    <CardDescription className="capitalize">{store.store_type.replace('_', ' ')}</CardDescription>
                   </div>
                 </div>
-                <Badge className={getStatusColor(store.status)}>
-                  {getStatusText(store.status)}
+                <Badge className={getStatusColor(status)}>
+                  {getStatusText(status)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                {store.description}
+                {store.description || 'No description available'}
               </p>
               
               <div className="flex items-center justify-between text-sm">
                 <div>
                   <span className="text-muted-foreground">Items:</span>
-                  <span className="font-medium ml-2">{store.itemCount}</span>
+                  <span className="font-medium ml-2">{itemCount}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Manager:</span>
-                  <span className="font-medium ml-2">{store.manager}</span>
+                  <span className="text-muted-foreground">Location:</span>
+                  <span className="font-medium ml-2">{store.location || 'N/A'}</span>
                 </div>
               </div>
               
               <div className="text-xs text-muted-foreground">
-                Last updated: {store.lastUpdated}
+                Created: {new Date(store.created_at || '').toLocaleDateString()}
               </div>
               
               <div className="flex gap-2 pt-2">

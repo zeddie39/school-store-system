@@ -14,7 +14,7 @@ import {
 import StoreGrid from '../stores/StoreGrid';
 import StatsCard from '../common/StatsCard';
 
-const StoreKeeperDashboard: React.FC = () => {
+
   const stats = [
     {
       title: "My Stores",
