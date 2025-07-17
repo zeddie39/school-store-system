@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useItems } from '@/hooks/useItems';
 import { useRequests } from '@/hooks/useRequests';
+import { useAuth } from '@/hooks/useAuth';
 import { Plus } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -28,13 +29,19 @@ const CreateRequestDialog: React.FC<CreateRequestDialogProps> = ({ trigger }) =>
 
   const { items } = useItems();
   const { createRequest } = useRequests();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     setLoading(true);
     try {
-      await createRequest(formData);
+      await createRequest({
+        item_id: formData.item_id,
+        quantity: formData.quantity,
+        request_type: formData.request_type,
+        reason: formData.reason
+      });
       setOpen(false);
       setFormData({
         item_id: '',

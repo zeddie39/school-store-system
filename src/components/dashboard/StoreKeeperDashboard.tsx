@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,12 +13,22 @@ import {
 } from 'lucide-react';
 import StoreGrid from '../stores/StoreGrid';
 import StatsCard from '../common/StatsCard';
+import AddItemDialog from '../items/AddItemDialog';
+import CreateRequestDialog from '../requests/CreateRequestDialog';
+import { useStats } from '@/hooks/useStats';
+import { useAuth } from '@/hooks/useAuth';
 
+const StoreKeeperDashboard: React.FC = () => {
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { stats: dashboardStats } = useStats();
+  const { profile } = useAuth();
 
-  const stats = [
+  const statsArray = [
     {
       title: "My Stores",
-      value: "5",
+      value: dashboardStats.totalStores.toString(),
       description: "Stores under management",
       icon: Store,
       trend: "+1",
@@ -26,7 +36,7 @@ import StatsCard from '../common/StatsCard';
     },
     {
       title: "Total Items",
-      value: "487",
+      value: dashboardStats.totalItems.toString(),
       description: "Items in inventory",
       icon: Package,
       trend: "+23",
@@ -34,7 +44,7 @@ import StatsCard from '../common/StatsCard';
     },
     {
       title: "Low Stock",
-      value: "12",
+      value: dashboardStats.lowStockItems.toString(),
       description: "Items need restocking",
       icon: AlertTriangle,
       trend: "-3",
@@ -42,7 +52,7 @@ import StatsCard from '../common/StatsCard';
     },
     {
       title: "Recent Additions",
-      value: "34",
+      value: dashboardStats.recentItems.toString(),
       description: "Added this week",
       icon: TrendingUp,
       trend: "+8",
@@ -69,7 +79,7 @@ import StatsCard from '../common/StatsCard';
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {statsArray.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}
       </div>
@@ -89,7 +99,12 @@ import StatsCard from '../common/StatsCard';
                 key={index}
                 variant="outline"
                 className="h-24 flex-col gap-2"
-                onClick={() => console.log(`Action: ${action.action}`)}
+                onClick={() => {
+                  if (action.action === 'add-item') setAddItemOpen(true);
+                  else if (action.action === 'request') setRequestOpen(true);
+                  else if (action.action === 'search') setSearchOpen(true);
+                  else console.log(`Action: ${action.action}`);
+                }}
               >
                 <div className={`p-2 rounded-full ${action.color} text-white`}>
                   <action.icon className="w-6 h-6" />
@@ -116,6 +131,10 @@ import StatsCard from '../common/StatsCard';
           <StoreGrid userRole="storekeeper" />
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      {addItemOpen && <AddItemDialog trigger={<Button>Add Item</Button>} />}
+      {requestOpen && <CreateRequestDialog trigger={<Button>Request</Button>} />}
     </div>
   );
 };

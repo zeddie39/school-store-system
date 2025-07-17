@@ -13,6 +13,7 @@ interface DashboardStats {
   totalProcurements: number;
   monthlyExpenses: number;
   activeProcurements: number;
+  recentItems: number;
 }
 
 export const useStats = () => {
@@ -26,7 +27,8 @@ export const useStats = () => {
     rejectedRequests: 0,
     totalProcurements: 0,
     monthlyExpenses: 0,
-    activeProcurements: 0
+    activeProcurements: 0,
+    recentItems: 0
   });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -43,11 +45,18 @@ export const useStats = () => {
       // Fetch items count and low stock items
       const { data: items } = await supabase
         .from('items')
-        .select('quantity, minimum_stock');
+        .select('quantity, minimum_stock, created_at');
 
       const totalItems = items?.length || 0;
       const lowStockItems = items?.filter(item => 
         item.minimum_stock && item.quantity <= item.minimum_stock
+      ).length || 0;
+
+      // Calculate recent items (within last 7 days)
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const recentItems = items?.filter(item => 
+        item.created_at && new Date(item.created_at) > oneWeekAgo
       ).length || 0;
 
       // Fetch requests statistics
@@ -98,7 +107,8 @@ export const useStats = () => {
         rejectedRequests: rejectedRequestsCount || 0,
         totalProcurements: procurementsCount || 0,
         monthlyExpenses,
-        activeProcurements: procurementsCount || 0
+        activeProcurements: procurementsCount || 0,
+        recentItems
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

@@ -21,17 +21,17 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, userEmail, userProfile,
   const renderDashboard = () => {
     switch (userRole) {
       case 'admin':
-        return <AdminDashboard userProfile={userProfile} />;
+        return <AdminDashboard />;
       case 'storekeeper':
-        return <StoreKeeperDashboard userProfile={userProfile} />;
+        return <StoreKeeperDashboard />;
       case 'teacher':
-        return <TeacherDashboard userProfile={userProfile} />;
+        return <TeacherDashboard />;
       case 'procurement_officer':
-        return <ProcurementDashboard userProfile={userProfile} />;
+        return <ProcurementDashboard />;
       case 'bursar':
-        return <BursarDashboard userProfile={userProfile} />;
+        return <BursarDashboard />;
       default:
-        return <StoreKeeperDashboard userProfile={userProfile} />;
+        return <StoreKeeperDashboard />;
     }
   };
 

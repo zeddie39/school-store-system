@@ -7,6 +7,7 @@ import type { Database } from '@/integrations/supabase/types';
 type StockRequest = Database['public']['Tables']['stock_requests']['Row'];
 type StockRequestInsert = Database['public']['Tables']['stock_requests']['Insert'];
 type StockRequestUpdate = Database['public']['Tables']['stock_requests']['Update'];
+type RequestType = Database['public']['Enums']['request_type'];
 
 export const useRequests = () => {
   const [requests, setRequests] = useState<StockRequest[]>([]);
@@ -41,13 +42,20 @@ export const useRequests = () => {
     }
   };
 
-  const createRequest = async (request: StockRequestInsert) => {
+  const createRequest = async (requestData: {
+    item_id: string;
+    quantity: number;
+    request_type: RequestType;
+    reason: string;
+  }) => {
+    if (!user?.id) throw new Error('User not authenticated');
+    
     try {
       const { data, error } = await supabase
         .from('stock_requests')
         .insert({
-          ...request,
-          requested_by: user!.id
+          ...requestData,
+          requested_by: user.id
         })
         .select()
         .single();
