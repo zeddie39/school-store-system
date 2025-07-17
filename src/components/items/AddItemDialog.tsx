@@ -12,11 +12,20 @@ import { Plus } from 'lucide-react';
 
 interface AddItemDialogProps {
   storeId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
 }
 
-const AddItemDialog: React.FC<AddItemDialogProps> = ({ storeId, trigger }) => {
-  const [open, setOpen] = useState(false);
+const AddItemDialog: React.FC<AddItemDialogProps> = ({ 
+  storeId, 
+  open: externalOpen, 
+  onOpenChange: externalOnOpenChange, 
+  trigger 
+}) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [formData, setFormData] = useState({
     name: '',
     description: '',

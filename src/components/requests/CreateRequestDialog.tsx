@@ -14,11 +14,19 @@ import type { Database } from '@/integrations/supabase/types';
 type RequestType = Database['public']['Enums']['request_type'];
 
 interface CreateRequestDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
 }
 
-const CreateRequestDialog: React.FC<CreateRequestDialogProps> = ({ trigger }) => {
-  const [open, setOpen] = useState(false);
+const CreateRequestDialog: React.FC<CreateRequestDialogProps> = ({ 
+  open: externalOpen, 
+  onOpenChange: externalOnOpenChange, 
+  trigger 
+}) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [formData, setFormData] = useState({
     item_id: '',
     quantity: 1,

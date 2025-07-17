@@ -15,6 +15,7 @@ import StoreGrid from '../stores/StoreGrid';
 import StatsCard from '../common/StatsCard';
 import AddItemDialog from '../items/AddItemDialog';
 import CreateRequestDialog from '../requests/CreateRequestDialog';
+import DepartmentItemsView from '../stores/DepartmentItemsView';
 import { useStats } from '@/hooks/useStats';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -132,9 +133,33 @@ const StoreKeeperDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Department Items Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            Department Inventory Management
+          </CardTitle>
+          <CardDescription>
+            Manage items by department with real-time tracking
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DepartmentItemsView />
+        </CardContent>
+      </Card>
+
       {/* Dialogs */}
-      {addItemOpen && <AddItemDialog trigger={<Button>Add Item</Button>} />}
-      {requestOpen && <CreateRequestDialog trigger={<Button>Request</Button>} />}
+      <AddItemDialog 
+        open={addItemOpen} 
+        onOpenChange={setAddItemOpen}
+        trigger={<Button>Add Item</Button>} 
+      />
+      <CreateRequestDialog 
+        open={requestOpen} 
+        onOpenChange={setRequestOpen}
+        trigger={<Button>Request</Button>} 
+      />
     </div>
   );
 };

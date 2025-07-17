@@ -149,7 +149,6 @@
 .stats-card {
   @apply transition-all duration-200 hover:shadow-md;
 }
-}
 
 @layer base {
   * {

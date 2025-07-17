@@ -27,7 +27,11 @@ const StatsCard: React.FC<StatsCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-2xl font-bold">
+              {title.toLowerCase().includes('cost') || title.toLowerCase().includes('value') || title.toLowerCase().includes('budget') 
+                ? `KSH ${Number(value).toLocaleString()}` 
+                : value}
+            </p>
             <p className="text-xs text-muted-foreground">{description}</p>
           </div>
           <div className={`p-3 rounded-full bg-primary/10 ${color}`}>

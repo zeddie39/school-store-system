@@ -152,18 +152,32 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
               </div>
               
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => window.location.href = `/department-items?dept=${store.store_type}`}
+                >
                   <Eye className="w-4 h-4 mr-1" />
-                  View
+                  View Items
                 </Button>
                 {canEdit(userRole) && (
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => console.log(`Managing store: ${store.name}`)}
+                  >
                     <Edit className="w-4 h-4 mr-1" />
                     Manage
                   </Button>
                 )}
                 {(userRole === 'admin' || userRole === 'storekeeper') && (
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => console.log(`Adding item to: ${store.name}`)}
+                  >
                     <Plus className="w-4 h-4 mr-1" />
                     Add Item
                   </Button>
