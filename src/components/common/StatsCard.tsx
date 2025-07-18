@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
@@ -21,18 +22,27 @@ const StatsCard: React.FC<StatsCardProps> = ({
 }) => {
   const isPositiveTrend = trend.startsWith('+');
   
+  // Check if the value should be displayed as currency
+  const shouldDisplayAsCurrency = title.toLowerCase().includes('cost') || 
+                                  title.toLowerCase().includes('value') || 
+                                  title.toLowerCase().includes('budget') ||
+                                  title.toLowerCase().includes('expense') ||
+                                  title.toLowerCase().includes('amount');
+  
+  const displayValue = shouldDisplayAsCurrency 
+    ? `KSH ${Number(value).toLocaleString()}` 
+    : value;
+  
   return (
-    <Card className="stats-card">
+    <Card className="stats-card hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">
-              {title.toLowerCase().includes('cost') || title.toLowerCase().includes('value') || title.toLowerCase().includes('budget') 
-                ? `KSH ${Number(value).toLocaleString()}` 
-                : value}
+            <p className="text-2xl font-bold mt-1">
+              {displayValue}
             </p>
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
           </div>
           <div className={`p-3 rounded-full bg-primary/10 ${color}`}>
             <Icon className="w-6 h-6" />

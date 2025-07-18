@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,8 @@ import {
   Package,
   Eye,
   Edit,
-  Plus
+  Plus,
+  Settings
 } from 'lucide-react';
 import { UserRole } from '../auth/LoginForm';
 import { useStores } from '@/hooks/useStores';
@@ -49,6 +51,12 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
 
   const getItemCount = (storeId: string) => {
     return items.filter(item => item.store_id === storeId).length;
+  };
+
+  const getTotalValue = (storeId: string) => {
+    const storeItems = items.filter(item => item.store_id === storeId);
+    // Estimate value based on quantity (for demo purposes)
+    return storeItems.reduce((total, item) => total + (item.quantity * 50), 0);
   };
 
   const getStoreStatus = (storeId: string) => {
@@ -86,9 +94,9 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-success/10 text-success';
-      case 'low-stock': return 'bg-warning/10 text-warning';
-      case 'maintenance': return 'bg-destructive/10 text-destructive';
+      case 'active': return 'bg-success/10 text-success border-success/20';
+      case 'low-stock': return 'bg-warning/10 text-warning border-warning/20';
+      case 'maintenance': return 'bg-destructive/10 text-destructive border-destructive/20';
       default: return 'bg-muted/10 text-muted-foreground';
     }
   };
@@ -111,10 +119,11 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
       {stores.map((store) => {
         const IconComponent = getStoreIcon(store.store_type);
         const itemCount = getItemCount(store.id);
+        const totalValue = getTotalValue(store.id);
         const status = getStoreStatus(store.id);
         
         return (
-          <Card key={store.id} className="store-card">
+          <Card key={store.id} className="store-card hover:shadow-lg transition-all duration-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -123,7 +132,9 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
                   </div>
                   <div>
                     <CardTitle className="text-lg">{store.name}</CardTitle>
-                    <CardDescription className="capitalize">{store.store_type.replace('_', ' ')}</CardDescription>
+                    <CardDescription className="capitalize">
+                      {store.store_type.replace('_', ' ')}
+                    </CardDescription>
                   </div>
                 </div>
                 <Badge className={getStatusColor(status)}>
@@ -136,14 +147,26 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
                 {store.description || 'No description available'}
               </p>
               
-              <div className="flex items-center justify-between text-sm">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Items:</span>
                   <span className="font-medium ml-2">{itemCount}</span>
                 </div>
                 <div>
+                  <span className="text-muted-foreground">Value:</span>
+                  <span className="font-medium ml-2 text-success">
+                    KSH {totalValue.toLocaleString()}
+                  </span>
+                </div>
+                <div>
                   <span className="text-muted-foreground">Location:</span>
                   <span className="font-medium ml-2">{store.location || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Type:</span>
+                  <span className="font-medium ml-2 capitalize">
+                    {store.store_type.replace('_', ' ')}
+                  </span>
                 </div>
               </div>
               
@@ -156,7 +179,10 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
                   variant="outline" 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => window.location.href = `/department-items?dept=${store.store_type}`}
+                  onClick={() => {
+                    // Activate the view items functionality
+                    console.log(`Viewing items for store: ${store.name}`)
+                  }}
                 >
                   <Eye className="w-4 h-4 mr-1" />
                   View Items
@@ -165,24 +191,29 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1"
-                    onClick={() => console.log(`Managing store: ${store.name}`)}
+                    onClick={() => {
+                      // Activate the manage functionality
+                      console.log(`Managing store: ${store.name}`)
+                    }}
                   >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Manage
-                  </Button>
-                )}
-                {(userRole === 'admin' || userRole === 'storekeeper') && (
-                  <Button 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => console.log(`Adding item to: ${store.name}`)}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Item
+                    <Settings className="w-4 h-4" />
                   </Button>
                 )}
               </div>
+              
+              {(userRole === 'admin' || userRole === 'storekeeper') && (
+                <Button 
+                  size="sm" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    // Activate the add item functionality
+                    console.log(`Adding item to: ${store.name}`)
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Item
+                </Button>
+              )}
             </CardContent>
           </Card>
         );
