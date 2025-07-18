@@ -54,14 +54,21 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('🔐 Attempting login for:', loginData.email);
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Login error:', error);
+        throw error;
+      }
 
+      console.log('✅ Login successful:', data.user?.email);
+      
       if (data.user) {
         toast({
           title: "Login successful",
@@ -70,6 +77,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         // The auth state change will handle the redirect
       }
     } catch (error: any) {
+      console.error('❌ Login failed:', error);
       toast({
         title: "Login failed",
         description: error.message || "Invalid email or password",
@@ -83,6 +91,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('📝 Starting signup process for:', signupData.email);
+    
+    // Validation
     if (signupData.password !== signupData.confirmPassword) {
       toast({
         title: "Password mismatch",
@@ -101,24 +112,46 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       return;
     }
 
+    if (!signupData.fullName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your full name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      console.log('🔄 Sending signup request with data:', {
+        email: signupData.email,
+        role: signupData.role,
+        full_name: signupData.fullName,
+        department: signupData.department,
+        phone: signupData.phone
+      });
+
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
         options: {
           data: {
             full_name: signupData.fullName,
-            phone: signupData.phone,
-            department: signupData.department,
+            phone: signupData.phone || '',
+            department: signupData.department || '',
             role: signupData.role
           },
           emailRedirectTo: `${window.location.origin}/`
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Signup error:', error);
+        throw error;
+      }
+
+      console.log('✅ Signup successful:', data);
 
       if (data.user) {
         toast({
@@ -138,9 +171,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         });
       }
     } catch (error: any) {
+      console.error('❌ Signup failed:', error);
       toast({
         title: "Signup failed",
-        description: error.message,
+        description: error.message || "Failed to create account. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -226,7 +260,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label htmlFor="fullName">Full Name *</Label>
                     <Input
                       id="fullName"
                       value={signupData.fullName}
@@ -247,7 +281,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">Email *</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -278,7 +312,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
+                    <Label htmlFor="role">Role *</Label>
                     <Select
                       value={signupData.role}
                       onValueChange={(value: UserRole) => setSignupData(prev => ({ ...prev, role: value }))}
@@ -298,7 +332,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">Password *</Label>
                   <div className="relative">
                     <Input
                       id="signup-password"
@@ -307,6 +341,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                       onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
                       required
                       placeholder="Create a password"
+                      minLength={6}
                     />
                     <Button
                       type="button"
@@ -321,7 +356,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
