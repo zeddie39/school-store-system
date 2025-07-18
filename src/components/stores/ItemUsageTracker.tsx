@@ -13,7 +13,8 @@ import {
   TrendingDown, 
   Clock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Package
 } from 'lucide-react';
 import { useItems } from '@/hooks/useItems';
 import { useToast } from '@/hooks/use-toast';

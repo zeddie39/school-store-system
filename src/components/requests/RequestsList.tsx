@@ -25,6 +25,31 @@ interface RequestsListProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+// Extended type to include the joined data from the query
+interface ExtendedStockRequest {
+  id: string;
+  item_id: string;
+  quantity: number;
+  request_type: 'add_stock' | 'remove_stock' | 'transfer_stock';
+  reason: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | null;
+  requested_by: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  item?: {
+    name: string;
+    unit: string;
+  };
+  requested_by_profile?: {
+    full_name: string;
+  };
+  approved_by_profile?: {
+    full_name: string;
+  };
+}
+
 const RequestsList: React.FC<RequestsListProps> = ({ open, onOpenChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -33,7 +58,10 @@ const RequestsList: React.FC<RequestsListProps> = ({ open, onOpenChange }) => {
 
   const canApprove = profile?.role === 'admin' || profile?.role === 'teacher';
 
-  const filteredRequests = requests.filter(request => {
+  // Cast the requests to our extended type
+  const extendedRequests = requests as ExtendedStockRequest[];
+
+  const filteredRequests = extendedRequests.filter(request => {
     const matchesSearch = request.item?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.requested_by_profile?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
