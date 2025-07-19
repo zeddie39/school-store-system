@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Eye, EyeOff, School } from 'lucide-react';
+import AuthStatus from './AuthStatus';
 
 export type UserRole = 'admin' | 'storekeeper' | 'teacher' | 'procurement_officer' | 'bursar';
 
@@ -20,6 +20,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const { toast } = useToast();
   
   const [loginData, setLoginData] = useState({
@@ -53,6 +55,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setAuthError(null);
+    setAuthSuccess(null);
 
     console.log('🔐 Attempting login for:', loginData.email);
 
@@ -64,12 +68,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
       if (error) {
         console.error('❌ Login error:', error);
-        throw error;
+        setAuthError(error.message);
+        return;
       }
 
       console.log('✅ Login successful:', data.user?.email);
       
       if (data.user) {
+        setAuthSuccess('Login successful! Welcome back.');
         toast({
           title: "Login successful",
           description: "Welcome back to the School Store System!",
@@ -78,11 +84,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       }
     } catch (error: any) {
       console.error('❌ Login failed:', error);
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
-        variant: "destructive",
-      });
+      setAuthError(error.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -90,47 +92,33 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setAuthError(null);
+    setAuthSuccess(null);
     
     console.log('📝 Starting signup process for:', signupData.email);
     
     // Validation
     if (signupData.password !== signupData.confirmPassword) {
-      toast({
-        title: "Password mismatch",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+      setAuthError("Passwords do not match");
+      setLoading(false);
       return;
     }
 
     if (signupData.password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
+      setAuthError("Password must be at least 6 characters long");
+      setLoading(false);
       return;
     }
 
     if (!signupData.fullName.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter your full name",
-        variant: "destructive",
-      });
+      setAuthError("Please enter your full name");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-
     try {
-      console.log('🔄 Sending signup request with data:', {
-        email: signupData.email,
-        role: signupData.role,
-        full_name: signupData.fullName,
-        department: signupData.department,
-        phone: signupData.phone
-      });
+      console.log('🔄 Attempting user registration...');
 
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
@@ -148,12 +136,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
       if (error) {
         console.error('❌ Signup error:', error);
-        throw error;
+        if (error.message.includes('Database error')) {
+          setAuthError('There seems to be a temporary issue with account creation. Please contact support or try again later.');
+        } else {
+          setAuthError(error.message);
+        }
+        return;
       }
 
-      console.log('✅ Signup successful:', data);
+      console.log('✅ Signup response:', data);
 
       if (data.user) {
+        setAuthSuccess('Account created successfully! You can now log in.');
         toast({
           title: "Account created successfully",
           description: "Welcome to the School Store System! You can now log in.",
@@ -172,11 +166,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       }
     } catch (error: any) {
       console.error('❌ Signup failed:', error);
-      toast({
-        title: "Signup failed",
-        description: error.message || "Failed to create account. Please try again.",
-        variant: "destructive",
-      });
+      setAuthError(error.message || "Failed to create account. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -197,17 +187,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <AuthStatus loading={loading} error={authError} success={authSuccess} />
+          
           <Tabs value={isLogin ? "login" : "signup"} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger 
                 value="login" 
-                onClick={() => setIsLogin(true)}
+                onClick={() => {
+                  setIsLogin(true);
+                  setAuthError(null);
+                  setAuthSuccess(null);
+                }}
               >
                 Login
               </TabsTrigger>
               <TabsTrigger 
                 value="signup" 
-                onClick={() => setIsLogin(false)}
+                onClick={() => {
+                  setIsLogin(false);
+                  setAuthError(null);
+                  setAuthSuccess(null);
+                }}
               >
                 Sign Up
               </TabsTrigger>
@@ -224,6 +224,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                     onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
                     required
                     placeholder="Enter your email"
+                    disabled={loading}
                   />
                 </div>
 
@@ -237,6 +238,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                       onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                       required
                       placeholder="Enter your password"
+                      disabled={loading}
                     />
                     <Button
                       type="button"
@@ -244,6 +246,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                       size="sm"
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1"
                       onClick={() => setShowPassword(!showPassword)}
+                      disabled={loading}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
@@ -267,6 +270,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                       onChange={(e) => setSignupData(prev => ({ ...prev, fullName: e.target.value }))}
                       required
                       placeholder="Your full name"
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -276,6 +280,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                       value={signupData.phone}
                       onChange={(e) => setSignupData(prev => ({ ...prev, phone: e.target.value }))}
                       placeholder="Phone number"
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -289,6 +294,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                     onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))}
                     required
                     placeholder="Enter your email"
+                    disabled={loading}
                   />
                 </div>
 
@@ -298,6 +304,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                     <Select
                       value={signupData.department}
                       onValueChange={(value) => setSignupData(prev => ({ ...prev, department: value }))}
+                      disabled={loading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select department" />
@@ -316,6 +323,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                     <Select
                       value={signupData.role}
                       onValueChange={(value: UserRole) => setSignupData(prev => ({ ...prev, role: value }))}
+                      disabled={loading}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -342,6 +350,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                       required
                       placeholder="Create a password"
                       minLength={6}
+                      disabled={loading}
                     />
                     <Button
                       type="button"
@@ -349,6 +358,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                       size="sm"
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1"
                       onClick={() => setShowPassword(!showPassword)}
+                      disabled={loading}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
@@ -364,6 +374,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                     onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     required
                     placeholder="Confirm your password"
+                    disabled={loading}
                   />
                 </div>
 
