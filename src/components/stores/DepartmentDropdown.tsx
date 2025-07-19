@@ -14,6 +14,7 @@ import {
 import { useStores } from '@/hooks/useStores';
 import { useItems } from '@/hooks/useItems';
 import ItemUsageTracker from './ItemUsageTracker';
+import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
 type Item = Database['public']['Tables']['items']['Row'] & {
@@ -36,6 +37,7 @@ const DepartmentDropdown: React.FC<DepartmentDropdownProps> = ({
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const { stores } = useStores();
   const { items } = useItems();
+  const { toast } = useToast();
 
   // Get items for this department
   const departmentStores = stores.filter(store => store.store_type === department);
@@ -64,11 +66,28 @@ const DepartmentDropdown: React.FC<DepartmentDropdownProps> = ({
     }
   };
 
+  const handleItemClick = (item: Item) => {
+    setSelectedItem(item);
+    toast({
+      title: "Item Selected",
+      description: `Opening usage tracker for ${item.name}...`,
+    });
+  };
+
+  const handleTrackUsage = (item: Item, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedItem(item);
+    toast({
+      title: "Usage Tracker",
+      description: `Opening usage tracker for ${item.name}...`,
+    });
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
         <div 
-          className="flex items-center justify-between cursor-pointer"
+          className="flex items-center justify-between cursor-pointer hover:bg-muted/20 p-2 rounded-lg transition-colors"
           onClick={onToggle}
         >
           <div className="flex items-center gap-3">
@@ -101,8 +120,8 @@ const DepartmentDropdown: React.FC<DepartmentDropdownProps> = ({
               return (
                 <Card 
                   key={item.id} 
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-md border ${getStatusColor(status)}`}
-                  onClick={() => setSelectedItem(item)}
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-105 border ${getStatusColor(status)}`}
+                  onClick={() => handleItemClick(item)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
@@ -139,16 +158,13 @@ const DepartmentDropdown: React.FC<DepartmentDropdownProps> = ({
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          <span>This Week</span>
+                          <span>Click to track</span>
                         </div>
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="h-6 px-2 text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedItem(item);
-                          }}
+                          className="h-6 px-2 text-xs hover:bg-primary hover:text-primary-foreground"
+                          onClick={(e) => handleTrackUsage(item, e)}
                         >
                           Track Usage
                         </Button>

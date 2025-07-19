@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +14,12 @@ import {
   Clock
 } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
+import { useToast } from '@/hooks/use-toast';
 
 const ProcurementDashboard: React.FC = () => {
+  const { toast } = useToast();
+  const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
+
   const stats = [
     {
       title: "Purchase Orders",
@@ -50,7 +55,7 @@ const ProcurementDashboard: React.FC = () => {
     }
   ];
 
-  const procurementRequests = [
+  const [procurementRequests, setProcurementRequests] = useState([
     {
       id: 1,
       department: "Science Laboratory",
@@ -81,7 +86,7 @@ const ProcurementDashboard: React.FC = () => {
       requestDate: "2024-01-13",
       urgency: "Low"
     }
-  ];
+  ]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -102,11 +107,50 @@ const ProcurementDashboard: React.FC = () => {
     }
   };
 
+  const handleNewPurchaseOrder = () => {
+    toast({
+      title: "New Purchase Order",
+      description: "Opening purchase order form...",
+    });
+  };
+
+  const handleReviewRequest = (requestId: number) => {
+    toast({
+      title: "Reviewing Request",
+      description: `Opening review for request #${requestId}...`,
+    });
+  };
+
+  const handleProcessRequest = (requestId: number) => {
+    setProcessingRequests(prev => new Set(prev).add(requestId));
+    setTimeout(() => {
+      setProcurementRequests(prev => prev.map(req => 
+        req.id === requestId ? { ...req, status: 'processing' } : req
+      ));
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
+      toast({
+        title: "Request Processed",
+        description: `Request #${requestId} has been moved to processing.`,
+      });
+    }, 2000);
+  };
+
+  const handleTrackOrder = (requestId: number) => {
+    toast({
+      title: "Tracking Order",
+      description: `Opening tracking details for request #${requestId}...`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Procurement Dashboard</h1>
-        <Button>
+        <Button onClick={handleNewPurchaseOrder}>
           <ShoppingCart className="w-4 h-4 mr-2" />
           New Purchase Order
         </Button>
@@ -172,18 +216,29 @@ const ProcurementDashboard: React.FC = () => {
                   <div className="flex gap-2">
                     {request.status === 'pending' && (
                       <>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleReviewRequest(request.id)}
+                        >
                           <Clock className="w-4 h-4 mr-1" />
                           Review
                         </Button>
-                        <Button size="sm">
+                        <Button 
+                          size="sm"
+                          onClick={() => handleProcessRequest(request.id)}
+                          disabled={processingRequests.has(request.id)}
+                        >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Process
+                          {processingRequests.has(request.id) ? 'Processing...' : 'Process'}
                         </Button>
                       </>
                     )}
                     {request.status === 'approved' && (
-                      <Button size="sm">
+                      <Button 
+                        size="sm"
+                        onClick={() => handleTrackOrder(request.id)}
+                      >
                         <Truck className="w-4 h-4 mr-1" />
                         Track Order
                       </Button>

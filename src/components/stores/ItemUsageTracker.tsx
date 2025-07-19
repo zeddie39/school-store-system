@@ -14,7 +14,8 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  Package
+  Package,
+  X
 } from 'lucide-react';
 import { useItems } from '@/hooks/useItems';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +41,7 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
   const [usageRecords, setUsageRecords] = useState<UsageRecord[]>([]);
   const [todayUsage, setTodayUsage] = useState(0);
   const [weeklyUsage, setWeeklyUsage] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
   const { updateItem } = useItems();
   const { toast } = useToast();
 
@@ -69,6 +71,23 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
     setWeeklyUsage(weeklyRecords.reduce((sum, r) => sum + r.quantity_used, 0));
   };
 
+  const handleIncrement = () => {
+    if (usageQuantity < item.quantity) {
+      setUsageQuantity(prev => prev + 1);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (usageQuantity > 1) {
+      setUsageQuantity(prev => prev - 1);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 1;
+    setUsageQuantity(Math.max(1, Math.min(item.quantity, value)));
+  };
+
   const handleUseItem = async () => {
     if (usageQuantity <= 0 || usageQuantity > item.quantity) {
       toast({
@@ -78,6 +97,8 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
       });
       return;
     }
+
+    setIsRecording(true);
 
     try {
       // Update item quantity in database
@@ -110,7 +131,18 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
         description: "Failed to update item usage.",
         variant: "destructive",
       });
+    } finally {
+      setIsRecording(false);
     }
+  };
+
+  const handleCancel = () => {
+    setUsageQuantity(1);
+    onClose();
+    toast({
+      title: "Usage tracking cancelled",
+      description: "No changes were made to the item.",
+    });
   };
 
   const getStockStatus = () => {
@@ -127,10 +159,15 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            {item.name} - Usage Tracker
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              {item.name} - Usage Tracker
+            </DialogTitle>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
           <DialogDescription>
             Track and record usage of this item with automatic quantity updates
           </DialogDescription>
@@ -174,7 +211,7 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setUsageQuantity(Math.max(1, usageQuantity - 1))}
+                  onClick={handleDecrement}
                   disabled={usageQuantity <= 1}
                 >
                   <Minus className="w-4 h-4" />
@@ -183,7 +220,7 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
                   id="quantity"
                   type="number"
                   value={usageQuantity}
-                  onChange={(e) => setUsageQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={handleInputChange}
                   min={1}
                   max={item.quantity}
                   className="text-center w-24"
@@ -191,7 +228,7 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setUsageQuantity(Math.min(item.quantity, usageQuantity + 1))}
+                  onClick={handleIncrement}
                   disabled={usageQuantity >= item.quantity}
                 >
                   <Plus className="w-4 h-4" />
@@ -240,16 +277,17 @@ const ItemUsageTracker: React.FC<ItemUsageTrackerProps> = ({ item, isOpen, onClo
             <Button
               variant="outline"
               className="flex-1"
-              onClick={onClose}
+              onClick={handleCancel}
+              disabled={isRecording}
             >
               Cancel
             </Button>
             <Button
               className="flex-1"
               onClick={handleUseItem}
-              disabled={usageQuantity <= 0 || usageQuantity > item.quantity}
+              disabled={usageQuantity <= 0 || usageQuantity > item.quantity || isRecording}
             >
-              Record Usage
+              {isRecording ? 'Recording...' : 'Record Usage'}
             </Button>
           </div>
         </div>

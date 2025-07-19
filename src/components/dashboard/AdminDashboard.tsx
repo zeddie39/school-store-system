@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,8 +15,13 @@ import {
 } from 'lucide-react';
 import StoreGrid from '../stores/StoreGrid';
 import StatsCard from '../common/StatsCard';
+import { useToast } from '@/hooks/use-toast';
 
 const AdminDashboard: React.FC = () => {
+  const { toast } = useToast();
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
   const stats = [
     {
       title: "Total Users",
@@ -58,16 +64,32 @@ const AdminDashboard: React.FC = () => {
     { user: "Sarah Wilson", action: "Updated sports inventory", store: "Sports Store", time: "8 hours ago" }
   ];
 
+  const handleSettings = () => {
+    toast({
+      title: "Settings",
+      description: "Opening system settings...",
+    });
+    setShowSettings(true);
+  };
+
+  const handleManageUsers = () => {
+    toast({
+      title: "User Management",
+      description: "Opening user management panel...",
+    });
+    setShowUserManagement(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleSettings}>
             <Settings className="w-4 h-4 mr-2" />
             Settings
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleManageUsers}>
             <Users className="w-4 h-4 mr-2" />
             Manage Users
           </Button>

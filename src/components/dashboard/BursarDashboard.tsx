@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +15,12 @@ import {
   Download
 } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
+import { useToast } from '@/hooks/use-toast';
 
 const BursarDashboard: React.FC = () => {
+  const { toast } = useToast();
+  const [processingPayments, setProcessingPayments] = useState<Set<number>>(new Set());
+
   const stats = [
     {
       title: "Total Budget",
@@ -51,7 +56,7 @@ const BursarDashboard: React.FC = () => {
     }
   ];
 
-  const expenses = [
+  const [expenses, setExpenses] = useState([
     {
       id: 1,
       category: "Laboratory Equipment",
@@ -79,7 +84,7 @@ const BursarDashboard: React.FC = () => {
       status: "approved",
       department: "Kitchen"
     }
-  ];
+  ]);
 
   const departmentBudgets = [
     { name: "Science Laboratory", allocated: "$25,000", spent: "$18,500", remaining: "$6,500", percentage: 74 },
@@ -103,16 +108,61 @@ const BursarDashboard: React.FC = () => {
     return 'bg-success';
   };
 
+  const handleExportReport = () => {
+    toast({
+      title: "Exporting Report",
+      description: "Generating financial report...",
+    });
+    setTimeout(() => {
+      toast({
+        title: "Report Ready",
+        description: "Financial report has been downloaded.",
+      });
+    }, 2000);
+  };
+
+  const handleBudgetAnalysis = () => {
+    toast({
+      title: "Budget Analysis",
+      description: "Opening budget analysis tool...",
+    });
+  };
+
+  const handleProcessPayment = (expenseId: number) => {
+    setProcessingPayments(prev => new Set(prev).add(expenseId));
+    setTimeout(() => {
+      setExpenses(prev => prev.map(expense => 
+        expense.id === expenseId ? { ...expense, status: 'paid' } : expense
+      ));
+      setProcessingPayments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(expenseId);
+        return newSet;
+      });
+      toast({
+        title: "Payment Processed",
+        description: `Payment for expense #${expenseId} has been completed.`,
+      });
+    }, 2000);
+  };
+
+  const handleViewDetails = (expenseId: number) => {
+    toast({
+      title: "Expense Details",
+      description: `Opening detailed view for expense #${expenseId}...`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Bursar Dashboard</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportReport}>
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleBudgetAnalysis}>
             <Calculator className="w-4 h-4 mr-2" />
             Budget Analysis
           </Button>
@@ -217,12 +267,20 @@ const BursarDashboard: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     {expense.status === 'pending' && (
-                      <Button size="sm">
+                      <Button 
+                        size="sm"
+                        onClick={() => handleProcessPayment(expense.id)}
+                        disabled={processingPayments.has(expense.id)}
+                      >
                         <CreditCard className="w-4 h-4 mr-1" />
-                        Process Payment
+                        {processingPayments.has(expense.id) ? 'Processing...' : 'Process Payment'}
                       </Button>
                     )}
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewDetails(expense.id)}
+                    >
                       <FileText className="w-4 h-4 mr-1" />
                       View Details
                     </Button>

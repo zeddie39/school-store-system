@@ -12,12 +12,14 @@ import {
 import { useStores } from '@/hooks/useStores';
 import DepartmentDropdown from './DepartmentDropdown';
 import AddItemDialog from '../items/AddItemDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const DepartmentItemsView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [openDepartments, setOpenDepartments] = useState<Set<string>>(new Set());
   const [addItemOpen, setAddItemOpen] = useState(false);
   const { stores } = useStores();
+  const { toast } = useToast();
 
   // Get unique departments
   const departments = React.useMemo(() => {
@@ -45,10 +47,26 @@ const DepartmentItemsView: React.FC = () => {
 
   const expandAll = () => {
     setOpenDepartments(new Set(departments.map(d => d.value)));
+    toast({
+      title: "Departments Expanded",
+      description: "All department sections have been expanded.",
+    });
   };
 
   const collapseAll = () => {
     setOpenDepartments(new Set());
+    toast({
+      title: "Departments Collapsed",
+      description: "All department sections have been collapsed.",
+    });
+  };
+
+  const handleAddItem = () => {
+    setAddItemOpen(true);
+    toast({
+      title: "Add New Item",
+      description: "Opening item creation form...",
+    });
   };
 
   return (
@@ -66,7 +84,7 @@ const DepartmentItemsView: React.FC = () => {
                 Click on departments to view items with real-time usage tracking
               </CardDescription>
             </div>
-            <Button onClick={() => setAddItemOpen(true)}>
+            <Button onClick={handleAddItem}>
               <Plus className="w-4 h-4 mr-2" />
               Add Item
             </Button>
