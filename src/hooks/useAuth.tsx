@@ -11,7 +11,9 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
+  profileError: string | null;
   signOut: () => Promise<void>;
+  createProfile: (userData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +23,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  const createProfile = async (userData: any) => {
+    if (!user) return;
+    
+    console.log('🔧 Creating missing profile for user:', user.email);
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email,
+          full_name: userData.full_name || user.user_metadata?.full_name || 'New User',
+          role: (userData.role || user.user_metadata?.role || 'storekeeper') as any,
+          phone: userData.phone || user.user_metadata?.phone || '',
+          department: userData.department || user.user_metadata?.department || ''
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error creating profile:', error);
+        setProfileError('Failed to create user profile');
+      } else {
+        console.log('✅ Profile created successfully:', data);
+        setProfile(data);
+        setProfileError(null);
+      }
+    } catch (err) {
+      console.error('❌ Profile creation error:', err);
+      setProfileError('Failed to create user profile');
+    }
+  };
 
   useEffect(() => {
     console.log('🔄 Setting up auth state listener...');
@@ -35,6 +71,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (session?.user && event === 'SIGNED_IN') {
           console.log('👤 User signed in, fetching profile...');
+          setProfileError(null);
+          
           // Defer profile fetching to avoid deadlocks
           setTimeout(async () => {
             try {
@@ -42,24 +80,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
-                .single();
+                .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no rows
               
               if (error) {
                 console.error('❌ Error fetching profile:', error);
+                setProfileError('Error fetching user profile');
                 setProfile(null);
+              } else if (!profile) {
+                console.log('⚠️ No profile found, user needs profile creation');
+                setProfileError('Profile not found - please contact administrator');
+                setProfile(null);
+                
+                // Attempt to create profile from user metadata
+                if (session.user.user_metadata) {
+                  await createProfile(session.user.user_metadata);
+                }
               } else {
                 console.log('✅ Profile fetched successfully:', profile);
                 setProfile(profile);
+                setProfileError(null);
               }
               setLoading(false);
             } catch (err) {
               console.error('❌ Profile fetch error:', err);
+              setProfileError('Unexpected error fetching profile');
               setProfile(null);
               setLoading(false);
             }
           }, 100);
         } else {
           setProfile(null);
+          setProfileError(null);
           setLoading(false);
         }
       }
@@ -73,18 +124,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (session?.user) {
         console.log('👤 Found existing session, fetching profile...');
+        setProfileError(null);
+        
         supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single()
+          .maybeSingle()
           .then(({ data: profile, error }) => {
             if (error) {
               console.error('❌ Error fetching existing profile:', error);
+              setProfileError('Error fetching user profile');
               setProfile(null);
+            } else if (!profile) {
+              console.log('⚠️ No existing profile found');
+              setProfileError('Profile not found - please contact administrator');
+              setProfile(null);
+              
+              // Attempt to create profile from user metadata
+              if (session.user.user_metadata) {
+                createProfile(session.user.user_metadata);
+              }
             } else {
               console.log('✅ Existing profile fetched:', profile);
               setProfile(profile);
+              setProfileError(null);
             }
             setLoading(false);
           });
@@ -106,10 +170,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setProfile(null);
     setSession(null);
+    setProfileError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      profile, 
+      session, 
+      loading, 
+      profileError, 
+      signOut, 
+      createProfile 
+    }}>
       {children}
     </AuthContext.Provider>
   );
