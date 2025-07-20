@@ -7,6 +7,10 @@ import TeacherDashboard from './TeacherDashboard';
 import ProcurementDashboard from './ProcurementDashboard';
 import BursarDashboard from './BursarDashboard';
 import Navigation from '../navigation/Navigation';
+import UserManagement from '../admin/UserManagement';
+import SystemSettings from '../admin/SystemSettings';
+import Reports from '../admin/Reports';
+import InventoryManagement from '../inventory/InventoryManagement';
 import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,50 +37,22 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, userEmail, userProfile,
     switch (currentView) {
       case '/users':
         if (userRole === 'admin') {
-          return (
-            <div className="p-6">
-              <h1 className="text-3xl font-bold mb-6">User Management</h1>
-              <div className="bg-card p-6 rounded-lg border">
-                <p className="text-muted-foreground">User management interface would be implemented here.</p>
-              </div>
-            </div>
-          );
+          return <UserManagement />;
         }
         break;
       case '/settings':
         if (userRole === 'admin') {
-          return (
-            <div className="p-6">
-              <h1 className="text-3xl font-bold mb-6">System Settings</h1>
-              <div className="bg-card p-6 rounded-lg border">
-                <p className="text-muted-foreground">System settings interface would be implemented here.</p>
-              </div>
-            </div>
-          );
+          return <SystemSettings />;
         }
         break;
       case '/reports':
         if (userRole === 'admin') {
-          return (
-            <div className="p-6">
-              <h1 className="text-3xl font-bold mb-6">Reports</h1>
-              <div className="bg-card p-6 rounded-lg border">
-                <p className="text-muted-foreground">Reports interface would be implemented here.</p>
-              </div>
-            </div>
-          );
+          return <Reports />;
         }
         break;
       case '/inventory':
         if (userRole === 'storekeeper') {
-          return (
-            <div className="p-6">
-              <h1 className="text-3xl font-bold mb-6">Inventory Management</h1>
-              <div className="bg-card p-6 rounded-lg border">
-                <p className="text-muted-foreground">Inventory management interface would be implemented here.</p>
-              </div>
-            </div>
-          );
+          return <InventoryManagement />;
         }
         break;
       case '/requests':
