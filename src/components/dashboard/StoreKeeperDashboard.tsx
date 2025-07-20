@@ -5,15 +5,11 @@ import { Button } from '@/components/ui/button';
 import { 
   Package, 
   Plus, 
-  Minus, 
-  Search,
   Store,
   AlertTriangle,
   TrendingUp,
   Box,
-  ShoppingCart,
-  FileText,
-  Users
+  FileText
 } from 'lucide-react';
 import StoreGrid from '../stores/StoreGrid';
 import StatsCard from '../common/StatsCard';
@@ -23,8 +19,10 @@ import DepartmentItemsView from '../stores/DepartmentItemsView';
 import RequestsList from '../requests/RequestsList';
 import { useStats } from '@/hooks/useStats';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 const StoreKeeperDashboard: React.FC = () => {
+  const { toast } = useToast();
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const [requestsListOpen, setRequestsListOpen] = useState(false);
@@ -67,36 +65,76 @@ const StoreKeeperDashboard: React.FC = () => {
     }
   ];
 
+  const handleAddItem = () => {
+    setAddItemOpen(true);
+    toast({
+      title: "Add New Item",
+      description: "Opening item creation form...",
+    });
+  };
+
+  const handleCreateRequest = () => {
+    setRequestOpen(true);
+    toast({
+      title: "Create Request",
+      description: "Opening request creation form...",
+    });
+  };
+
+  const handleViewRequests = () => {
+    setRequestsListOpen(true);
+    toast({
+      title: "View Requests",
+      description: "Opening requests management interface...",
+    });
+  };
+
+  const handleDepartmentView = () => {
+    setActiveTab('departments');
+    toast({
+      title: "Department View",
+      description: "Switching to department inventory view...",
+    });
+  };
+
   const quickActions = [
     { 
       title: "Add New Item", 
       icon: Plus, 
-      action: () => setAddItemOpen(true), 
+      action: handleAddItem, 
       color: "bg-success hover:bg-success/90",
       description: "Add items to inventory"
     },
     { 
       title: "Create Request", 
       icon: Box, 
-      action: () => setRequestOpen(true), 
+      action: handleCreateRequest, 
       color: "bg-primary hover:bg-primary/90",
       description: "Request stock changes"
     },
     { 
       title: "View Requests", 
       icon: FileText, 
-      action: () => setRequestsListOpen(true), 
+      action: handleViewRequests, 
       color: "bg-info hover:bg-info/90",
       description: "Track request status"
     },
     { 
       title: "Department View", 
       icon: Package, 
-      action: () => setActiveTab('departments'), 
+      action: handleDepartmentView, 
       color: "bg-warning hover:bg-warning/90",
       description: "Browse by department"
     }
   ];
+
+  const handleTabChange = (tab: 'overview' | 'departments' | 'requests') => {
+    setActiveTab(tab);
+    toast({
+      title: `Switched to ${tab.charAt(0).toUpperCase() + tab.slice(1)}`,
+      description: `Now viewing ${tab} section...`,
+    });
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -174,19 +212,19 @@ const StoreKeeperDashboard: React.FC = () => {
         <div className="flex gap-2">
           <Button
             variant={activeTab === 'overview' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTabChange('overview')}
           >
             Overview
           </Button>
           <Button
             variant={activeTab === 'departments' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('departments')}
+            onClick={() => handleTabChange('departments')}
           >
             Departments
           </Button>
           <Button
             variant={activeTab === 'requests' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('requests')}
+            onClick={() => handleTabChange('requests')}
           >
             Requests
           </Button>
