@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
 type Store = Database['public']['Tables']['stores']['Row'];
+type StoreType = Database['public']['Enums']['store_type'];
 
 interface StoreManagementDialogProps {
   open: boolean;
@@ -33,7 +34,7 @@ const StoreManagementDialog: React.FC<StoreManagementDialogProps> = ({
     name: store?.name || '',
     description: store?.description || '',
     location: store?.location || '',
-    store_type: store?.store_type || 'general'
+    store_type: store?.store_type || ('general' as StoreType)
   });
 
   React.useEffect(() => {
@@ -42,14 +43,14 @@ const StoreManagementDialog: React.FC<StoreManagementDialogProps> = ({
         name: store.name || '',
         description: store.description || '',
         location: store.location || '',
-        store_type: store.store_type || 'general'
+        store_type: store.store_type || ('general' as StoreType)
       });
     }
   }, [store]);
 
   if (!store) return null;
 
-  const storeTypes = [
+  const storeTypes: { value: StoreType; label: string }[] = [
     { value: 'library', label: 'Library' },
     { value: 'laboratory', label: 'Laboratory' },
     { value: 'kitchen', label: 'Kitchen' },
@@ -149,7 +150,7 @@ const StoreManagementDialog: React.FC<StoreManagementDialogProps> = ({
                 <Label htmlFor="store_type">Store Type</Label>
                 <Select 
                   value={formData.store_type} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, store_type: value }))}
+                  onValueChange={(value: StoreType) => setFormData(prev => ({ ...prev, store_type: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select store type" />
