@@ -1,182 +1,210 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useStores } from '@/hooks/useStores';
 import { useItems } from '@/hooks/useItems';
+import { useStores } from '@/hooks/useStores';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+
+type Store = Database['public']['Tables']['stores']['Row'];
 
 interface AddItemDialogProps {
-  storeId?: string;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  trigger?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedStore?: Store | null;
 }
 
 const AddItemDialog: React.FC<AddItemDialogProps> = ({ 
-  storeId, 
-  open: externalOpen, 
-  onOpenChange: externalOnOpenChange, 
-  trigger 
+  open, 
+  onOpenChange, 
+  selectedStore 
 }) => {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const open = externalOpen !== undefined ? externalOpen : internalOpen;
-  const setOpen = externalOnOpenChange || setInternalOpen;
+  const { createItem } = useItems();
+  const { stores } = useStores();
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    unit: 'pieces',
     quantity: 0,
+    unit: 'pieces',
     minimum_stock: 10,
-    store_id: storeId || ''
+    store_id: selectedStore?.id || ''
   });
-  const [loading, setLoading] = useState(false);
 
-  const { stores } = useStores();
-  const { createItem } = useItems();
-  const { user } = useAuth();
+  // Update store_id when selectedStore changes
+  useEffect(() => {
+    if (selectedStore) {
+      setFormData(prev => ({ ...prev, store_id: selectedStore.id }));
+    }
+  }, [selectedStore]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    
+    if (!formData.name || !formData.store_id) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setLoading(true);
+    setIsLoading(true);
     try {
       await createItem({
         ...formData,
-        added_by: user.id
+        added_by: profile?.id
       });
-      setOpen(false);
+      
+      toast({
+        title: "Item Added",
+        description: `${formData.name} has been added successfully.`,
+      });
+      
+      // Reset form
       setFormData({
         name: '',
         description: '',
-        unit: 'pieces',
         quantity: 0,
+        unit: 'pieces',
         minimum_stock: 10,
-        store_id: storeId || ''
+        store_id: selectedStore?.id || ''
       });
+      
+      onOpenChange(false);
     } catch (error) {
-      console.error('Error creating item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add item. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const units = [
+    'pieces', 'kg', 'g', 'liters', 'ml', 'meters', 'cm', 'boxes', 'sets', 'pairs'
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Item
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Item</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Add New Item
+          </DialogTitle>
           <DialogDescription>
-            Add a new item to the store inventory.
+            {selectedStore ? `Add item to ${selectedStore.name}` : 'Add a new item to store inventory'}
           </DialogDescription>
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Item Name</Label>
+          <div>
+            <Label htmlFor="name">Item Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter item name"
               required
             />
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Enter item description"
               rows={3}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input
+                id="quantity"
+                type="number"
+                value={formData.quantity}
+                onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+                min="0"
+              />
+            </div>
+            <div>
               <Label htmlFor="unit">Unit</Label>
-              <Select
-                value={formData.unit}
+              <Select 
+                value={formData.unit} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pieces">Pieces</SelectItem>
-                  <SelectItem value="kg">Kilograms</SelectItem>
-                  <SelectItem value="liters">Liters</SelectItem>
-                  <SelectItem value="boxes">Boxes</SelectItem>
-                  <SelectItem value="packs">Packs</SelectItem>
+                  {units.map(unit => (
+                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Initial Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="0"
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minimum_stock">Minimum Stock</Label>
-              <Input
-                id="minimum_stock"
-                type="number"
-                min="0"
-                value={formData.minimum_stock}
-                onChange={(e) => setFormData(prev => ({ ...prev, minimum_stock: parseInt(e.target.value) || 0 }))}
-              />
-            </div>
-
-            {!storeId && (
-              <div className="space-y-2">
-                <Label htmlFor="store">Store</Label>
-                <Select
-                  value={formData.store_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, store_id: value }))}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select store" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores.map((store) => (
-                      <SelectItem key={store.id} value={store.id}>
-                        {store.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          <div>
+            <Label htmlFor="minimum_stock">Minimum Stock Level</Label>
+            <Input
+              id="minimum_stock"
+              type="number"
+              value={formData.minimum_stock}
+              onChange={(e) => setFormData(prev => ({ ...prev, minimum_stock: parseInt(e.target.value) || 10 }))}
+              min="0"
+            />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+          {!selectedStore && (
+            <div>
+              <Label htmlFor="store_id">Store *</Label>
+              <Select 
+                value={formData.store_id} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, store_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a store" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map(store => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={isLoading} className="flex-1">
+              {isLoading ? 'Adding...' : 'Add Item'}
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Item'}
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancel
             </Button>
           </div>
         </form>
