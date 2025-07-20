@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '../auth/LoginForm';
 import type { Database } from '@/integrations/supabase/types';
@@ -14,6 +15,7 @@ import {
   DollarSign,
   Package
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -22,9 +24,13 @@ interface NavigationProps {
   userEmail: string;
   userProfile: Profile;
   onLogout: () => void;
+  onNavigate?: (path: string) => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfile, onLogout }) => {
+const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfile, onLogout, onNavigate }) => {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('/');
+
   const getNavItems = () => {
     const commonItems = [
       { icon: Home, label: 'Dashboard', path: '/' },
@@ -55,6 +61,18 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
     };
 
     return [...commonItems, ...roleSpecificItems[userRole]];
+  };
+
+  const handleNavigation = (item: { icon: any; label: string; path: string }) => {
+    setActiveTab(item.path);
+    toast({
+      title: `Navigating to ${item.label}`,
+      description: `Opening ${item.label} section...`,
+    });
+    
+    if (onNavigate) {
+      onNavigate(item.path);
+    }
   };
 
   const getRoleDisplayName = (role: UserRole) => {
@@ -100,9 +118,10 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
             {getNavItems().map((item, index) => (
               <Button
                 key={index}
-                variant="ghost"
+                variant={activeTab === item.path ? "default" : "ghost"}
                 size="sm"
                 className="text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent"
+                onClick={() => handleNavigation(item)}
               >
                 <item.icon className="w-4 h-4 mr-2" />
                 {item.label}
