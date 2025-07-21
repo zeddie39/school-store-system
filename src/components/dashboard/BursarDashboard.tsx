@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,11 @@ import {
   Calculator,
   PieChart,
   Calendar,
-  Download
+  Download,
+  Plus,
+  Edit,
+  Trash2,
+  Eye
 } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { useToast } from '@/hooks/use-toast';
@@ -20,11 +23,12 @@ import { useToast } from '@/hooks/use-toast';
 const BursarDashboard: React.FC = () => {
   const { toast } = useToast();
   const [processingPayments, setProcessingPayments] = useState<Set<number>>(new Set());
+  const [activeView, setActiveView] = useState<'overview' | 'budget' | 'expenses' | 'reports'>('overview');
 
   const stats = [
     {
       title: "Total Budget",
-      value: "$125,000",
+      value: "KSH 12,500,000",
       description: "Annual allocation",
       icon: DollarSign,
       trend: "+5%",
@@ -32,7 +36,7 @@ const BursarDashboard: React.FC = () => {
     },
     {
       title: "Spent This Month",
-      value: "$12,480",
+      value: "KSH 1,248,000",
       description: "Current spending",
       icon: TrendingDown,
       trend: "+8%",
@@ -40,7 +44,7 @@ const BursarDashboard: React.FC = () => {
     },
     {
       title: "Remaining Budget",
-      value: "$87,520",
+      value: "KSH 8,752,000",
       description: "Available funds",
       icon: TrendingUp,
       trend: "-3%",
@@ -48,7 +52,7 @@ const BursarDashboard: React.FC = () => {
     },
     {
       title: "Pending Payments",
-      value: "$5,240",
+      value: "KSH 524,000",
       description: "Awaiting approval",
       icon: CreditCard,
       trend: "+2",
@@ -60,7 +64,7 @@ const BursarDashboard: React.FC = () => {
     {
       id: 1,
       category: "Laboratory Equipment",
-      amount: "$3,200",
+      amount: "KSH 320,000",
       date: "2024-01-15",
       vendor: "Science Supply Co.",
       status: "paid",
@@ -69,7 +73,7 @@ const BursarDashboard: React.FC = () => {
     {
       id: 2,
       category: "Library Books",
-      amount: "$1,800",
+      amount: "KSH 180,000",
       date: "2024-01-14",
       vendor: "Academic Publishers",
       status: "pending",
@@ -78,7 +82,7 @@ const BursarDashboard: React.FC = () => {
     {
       id: 3,
       category: "Kitchen Supplies",
-      amount: "$950",
+      amount: "KSH 95,000",
       date: "2024-01-13",
       vendor: "Food Service Inc.",
       status: "approved",
@@ -87,10 +91,10 @@ const BursarDashboard: React.FC = () => {
   ]);
 
   const departmentBudgets = [
-    { name: "Science Laboratory", allocated: "$25,000", spent: "$18,500", remaining: "$6,500", percentage: 74 },
-    { name: "Library", allocated: "$15,000", spent: "$8,200", remaining: "$6,800", percentage: 55 },
-    { name: "Sports", allocated: "$12,000", spent: "$9,100", remaining: "$2,900", percentage: 76 },
-    { name: "Kitchen", allocated: "$20,000", spent: "$15,300", remaining: "$4,700", percentage: 77 }
+    { name: "Science Laboratory", allocated: "KSH 2,500,000", spent: "KSH 1,850,000", remaining: "KSH 650,000", percentage: 74 },
+    { name: "Library", allocated: "KSH 1,500,000", spent: "KSH 820,000", remaining: "KSH 680,000", percentage: 55 },
+    { name: "Sports", allocated: "KSH 1,200,000", spent: "KSH 910,000", remaining: "KSH 290,000", percentage: 76 },
+    { name: "Kitchen", allocated: "KSH 2,000,000", spent: "KSH 1,530,000", remaining: "KSH 470,000", percentage: 77 }
   ];
 
   const getStatusColor = (status: string) => {
@@ -110,21 +114,59 @@ const BursarDashboard: React.FC = () => {
 
   const handleExportReport = () => {
     toast({
-      title: "Exporting Report",
-      description: "Generating financial report...",
+      title: "Exporting Financial Report",
+      description: "Generating comprehensive financial report...",
     });
     setTimeout(() => {
       toast({
-        title: "Report Ready",
-        description: "Financial report has been downloaded.",
+        title: "Report Exported Successfully",
+        description: "Financial report has been downloaded to your device.",
       });
     }, 2000);
   };
 
   const handleBudgetAnalysis = () => {
+    setActiveView('budget');
     toast({
       title: "Budget Analysis",
-      description: "Opening budget analysis tool...",
+      description: "Opening comprehensive budget analysis dashboard...",
+    });
+  };
+
+  const handleExpenseTracking = () => {
+    setActiveView('expenses');
+    toast({
+      title: "Expense Tracking",
+      description: "Opening expense tracking interface...",
+    });
+  };
+
+  const handleCreateBudget = () => {
+    toast({
+      title: "Create New Budget",
+      description: "Opening budget creation form...",
+    });
+  };
+
+  const handleEditBudget = (budgetId: string) => {
+    toast({
+      title: "Edit Budget",
+      description: `Opening budget editor for ${budgetId}...`,
+    });
+  };
+
+  const handleDeleteBudget = (budgetId: string) => {
+    toast({
+      title: "Delete Budget",
+      description: `Are you sure you want to delete budget for ${budgetId}?`,
+      variant: "destructive",
+    });
+  };
+
+  const handleAddExpense = () => {
+    toast({
+      title: "Add New Expense",
+      description: "Opening expense entry form...",
     });
   };
 
@@ -141,7 +183,7 @@ const BursarDashboard: React.FC = () => {
       });
       toast({
         title: "Payment Processed",
-        description: `Payment for expense #${expenseId} has been completed.`,
+        description: `Payment of ${expenses.find(e => e.id === expenseId)?.amount} has been completed.`,
       });
     }, 2000);
   };
@@ -153,144 +195,405 @@ const BursarDashboard: React.FC = () => {
     });
   };
 
+  const handleGenerateReports = () => {
+    setActiveView('reports');
+    toast({
+      title: "Financial Reports",
+      description: "Opening comprehensive reports dashboard...",
+    });
+  };
+
+  const renderBudgetManagement = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Budget Management</h2>
+        <Button onClick={handleCreateBudget}>
+          <Plus className="w-4 h-4 mr-2" />
+          Create Budget
+        </Button>
+      </div>
+      
+      <div className="grid gap-4">
+        {departmentBudgets.map((dept, index) => (
+          <Card key={index}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg">{dept.name}</h3>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleEditBudget(dept.name)}>
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDeleteBudget(dept.name)}>
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Allocated</p>
+                  <p className="font-semibold">{dept.allocated}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Spent</p>
+                  <p className="font-semibold">{dept.spent}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Remaining</p>
+                  <p className="font-semibold">{dept.remaining}</p>
+                </div>
+              </div>
+              
+              <div className="w-full bg-muted rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${getProgressColor(dept.percentage)}`}
+                  style={{ width: `${dept.percentage}%` }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderExpenseTracking = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Expense Tracking</h2>
+        <Button onClick={handleAddExpense}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Expense
+        </Button>
+      </div>
+      
+      <div className="grid gap-4">
+        {expenses.map((expense) => (
+          <Card key={expense.id}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold">{expense.category}</h3>
+                  <p className="text-sm text-muted-foreground">{expense.department}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-lg">{expense.amount}</p>
+                  <Badge className={getStatusColor(expense.status)}>
+                    {expense.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Vendor</p>
+                  <p className="font-medium">{expense.vendor}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="font-medium">{expense.date}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  {expense.date}
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewDetails(expense.id)}
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    View
+                  </Button>
+                  {expense.status === 'pending' && (
+                    <Button 
+                      size="sm"
+                      onClick={() => handleProcessPayment(expense.id)}
+                      disabled={processingPayments.has(expense.id)}
+                    >
+                      <CreditCard className="w-4 h-4 mr-1" />
+                      {processingPayments.has(expense.id) ? 'Processing...' : 'Process'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderReports = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Financial Reports</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Report</CardTitle>
+            <CardDescription>Comprehensive monthly financial summary</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={handleExportReport}>
+              <Download className="w-4 h-4 mr-2" />
+              Generate Report
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Department Analysis</CardTitle>
+            <CardDescription>Spending analysis by department</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={handleExportReport}>
+              <PieChart className="w-4 h-4 mr-2" />
+              View Analysis
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Budget Variance</CardTitle>
+            <CardDescription>Budget vs actual spending comparison</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={handleExportReport}>
+              <Calculator className="w-4 h-4 mr-2" />
+              Generate Report
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeView) {
+      case 'budget':
+        return renderBudgetManagement();
+      case 'expenses':
+        return renderExpenseTracking();
+      case 'reports':
+        return renderReports();
+      default:
+        return (
+          <div className="space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
+                <StatsCard key={index} {...stat} />
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>
+                  Financial management shortcuts
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={handleBudgetAnalysis}
+                  >
+                    <Calculator className="w-6 h-6" />
+                    Budget Analysis
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col gap-2 bg-success text-success-foreground hover:bg-success/90"
+                    onClick={handleExpenseTracking}
+                  >
+                    <FileText className="w-6 h-6" />
+                    Track Expenses
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col gap-2 bg-info text-info-foreground hover:bg-info/90"
+                    onClick={handleGenerateReports}
+                  >
+                    <Download className="w-6 h-6" />
+                    Generate Reports
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col gap-2 bg-warning text-warning-foreground hover:bg-warning/90"
+                    onClick={handleAddExpense}
+                  >
+                    <Plus className="w-6 h-6" />
+                    Add Expense
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Department Budgets */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="w-5 h-5" />
+                  Department Budget Overview
+                </CardTitle>
+                <CardDescription>
+                  Track spending across all departments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {departmentBudgets.map((dept, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium">{dept.name}</h3>
+                        <Badge variant="outline">{dept.percentage}% Used</Badge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+                        <div>
+                          <span className="text-muted-foreground">Allocated:</span>
+                          <p className="font-medium">{dept.allocated}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Spent:</span>
+                          <p className="font-medium">{dept.spent}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Remaining:</span>
+                          <p className="font-medium">{dept.remaining}</p>
+                        </div>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${getProgressColor(dept.percentage)}`}
+                          style={{ width: `${dept.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Expenses */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Recent Expenses
+                </CardTitle>
+                <CardDescription>
+                  Latest financial transactions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {expenses.map((expense) => (
+                    <div key={expense.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{expense.category}</p>
+                          <p className="text-sm text-muted-foreground">{expense.department}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-lg">{expense.amount}</p>
+                          <Badge className={getStatusColor(expense.status)}>
+                            {expense.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Vendor:</span>
+                          <p className="font-medium">{expense.vendor}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Date:</span>
+                          <p className="font-medium">{expense.date}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          {expense.date}
+                        </div>
+                        <div className="flex gap-2">
+                          {expense.status === 'pending' && (
+                            <Button 
+                              size="sm"
+                              onClick={() => handleProcessPayment(expense.id)}
+                              disabled={processingPayments.has(expense.id)}
+                            >
+                              <CreditCard className="w-4 h-4 mr-1" />
+                              {processingPayments.has(expense.id) ? 'Processing...' : 'Process Payment'}
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewDetails(expense.id)}
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Bursar Dashboard</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportReport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export Report
+          <Button 
+            variant={activeView === 'overview' ? 'default' : 'outline'} 
+            onClick={() => setActiveView('overview')}
+          >
+            Overview
           </Button>
-          <Button size="sm" onClick={handleBudgetAnalysis}>
-            <Calculator className="w-4 h-4 mr-2" />
-            Budget Analysis
+          <Button 
+            variant={activeView === 'budget' ? 'default' : 'outline'} 
+            onClick={() => setActiveView('budget')}
+          >
+            Budget
+          </Button>
+          <Button 
+            variant={activeView === 'expenses' ? 'default' : 'outline'} 
+            onClick={() => setActiveView('expenses')}
+          >
+            Expenses
+          </Button>
+          <Button 
+            variant={activeView === 'reports' ? 'default' : 'outline'} 
+            onClick={() => setActiveView('reports')}
+          >
+            Reports
           </Button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <StatsCard key={index} {...stat} />
-        ))}
-      </div>
-
-      {/* Department Budgets */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PieChart className="w-5 h-5" />
-            Department Budget Overview
-          </CardTitle>
-          <CardDescription>
-            Track spending across all departments
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {departmentBudgets.map((dept, index) => (
-              <div key={index} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium">{dept.name}</h3>
-                  <Badge variant="outline">{dept.percentage}% Used</Badge>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                  <div>
-                    <span className="text-muted-foreground">Allocated:</span>
-                    <p className="font-medium">{dept.allocated}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Spent:</span>
-                    <p className="font-medium">{dept.spent}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Remaining:</span>
-                    <p className="font-medium">{dept.remaining}</p>
-                  </div>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getProgressColor(dept.percentage)}`}
-                    style={{ width: `${dept.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Expenses */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Recent Expenses
-          </CardTitle>
-          <CardDescription>
-            Latest financial transactions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {expenses.map((expense) => (
-              <div key={expense.id} className="p-4 border rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{expense.category}</p>
-                    <p className="text-sm text-muted-foreground">{expense.department}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-lg">{expense.amount}</p>
-                    <Badge className={getStatusColor(expense.status)}>
-                      {expense.status}
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Vendor:</span>
-                    <p className="font-medium">{expense.vendor}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Date:</span>
-                    <p className="font-medium">{expense.date}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    {expense.date}
-                  </div>
-                  <div className="flex gap-2">
-                    {expense.status === 'pending' && (
-                      <Button 
-                        size="sm"
-                        onClick={() => handleProcessPayment(expense.id)}
-                        disabled={processingPayments.has(expense.id)}
-                      >
-                        <CreditCard className="w-4 h-4 mr-1" />
-                        {processingPayments.has(expense.id) ? 'Processing...' : 'Process Payment'}
-                      </Button>
-                    )}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleViewDetails(expense.id)}
-                    >
-                      <FileText className="w-4 h-4 mr-1" />
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {renderContent()}
     </div>
   );
 };

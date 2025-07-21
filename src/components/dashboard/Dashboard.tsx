@@ -105,26 +105,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, userEmail, userProfile,
         break;
       case '/budget':
         if (userRole === 'bursar') {
-          return (
-            <div className="p-6">
-              <h1 className="text-3xl font-bold mb-6">Budget Management</h1>
-              <div className="bg-card p-6 rounded-lg border">
-                <p className="text-muted-foreground">Budget management interface would be implemented here.</p>
-              </div>
-            </div>
-          );
+          return <BursarDashboard />;
         }
         break;
       case '/expenses':
         if (userRole === 'bursar') {
-          return (
-            <div className="p-6">
-              <h1 className="text-3xl font-bold mb-6">Expense Tracking</h1>
-              <div className="bg-card p-6 rounded-lg border">
-                <p className="text-muted-foreground">Expense tracking interface would be implemented here.</p>
-              </div>
-            </div>
-          );
+          return <BursarDashboard />;
         }
         break;
       case '/stores':

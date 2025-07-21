@@ -16,6 +16,11 @@ interface DashboardStats {
   recentItems: number;
 }
 
+// Utility function to format currency to KSH
+const formatCurrency = (amount: number): string => {
+  return `KSH ${amount.toLocaleString()}`;
+};
+
 export const useStats = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalStores: 0,
@@ -123,5 +128,5 @@ export const useStats = () => {
     }
   }, [user]);
 
-  return { stats, loading, refetch: fetchStats };
+  return { stats, loading, refetch: fetchStats, formatCurrency };
 };
