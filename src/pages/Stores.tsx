@@ -78,11 +78,16 @@ export function DepartmentDropdownNav({ stores }: { stores: any[] }) {
         onChange={e => setSelected(e.target.value)}
       >
         <option value="">Select department...</option>
-        {stores.map((store: any) => (
-          <option key={store.id} value={store.store_type}>
-            {store.name} ({store.store_type.replace('_', ' ')})
-          </option>
-        ))}
+        {stores.map((store: any) => {
+          // Ensure value matches department keys in departmentReports
+          let value = store.store_type;
+          if (value === 'ict') value = 'ict_lab';
+          return (
+            <option key={store.id} value={value}>
+              {store.name} ({value.replace('_', ' ')})
+            </option>
+          );
+        })}
       </select>
     </div>
   );
