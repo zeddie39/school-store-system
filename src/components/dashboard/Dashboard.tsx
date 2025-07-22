@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { UserRole } from '../auth/LoginForm';
 import AdminDashboard from './AdminDashboard';
+import StoresPage from '../../pages/Stores';
 import StoreKeeperDashboard from './StoreKeeperDashboard';
 import TeacherDashboard from './TeacherDashboard';
 import ProcurementDashboard from './ProcurementDashboard';
@@ -114,14 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, userEmail, userProfile,
         }
         break;
       case '/stores':
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">All Stores</h1>
-            <div className="bg-card p-6 rounded-lg border">
-              <p className="text-muted-foreground">Stores overview interface would be implemented here.</p>
-            </div>
-          </div>
-        );
+        return <StoresPage />;
       default:
         // Return to dashboard
         switch (userRole) {
