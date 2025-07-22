@@ -60,6 +60,34 @@ const departmentReports = [
 ];
 
 
+
+export function DepartmentDropdownNav({ stores }: { stores: any[] }) {
+  const navigate = useNavigate();
+  const [selected, setSelected] = React.useState('');
+  React.useEffect(() => {
+    if (selected) {
+      navigate(`/stores/${selected}`);
+    }
+  }, [selected, navigate]);
+  return (
+    <div className="max-w-xs">
+      <label className="block mb-2 font-medium">Department</label>
+      <select
+        className="w-full border rounded px-3 py-2"
+        value={selected}
+        onChange={e => setSelected(e.target.value)}
+      >
+        <option value="">Select department...</option>
+        {stores.map((store: any) => (
+          <option key={store.id} value={store.store_type}>
+            {store.name} ({store.store_type.replace('_', ' ')})
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // Department reports page
 const DepartmentReports: React.FC = () => {
   const { department } = useParams();
@@ -153,31 +181,6 @@ const DepartmentReports: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-
-export function DepartmentDropdownNav({ stores }: { stores: any[] }) {
-  const navigate = useNavigate();
-  const [selected, setSelected] = React.useState('');
-  React.useEffect(() => {
-    if (selected) {
-      navigate(`/stores/${selected}`);
-    }
-  }, [selected, navigate]);
-  return (
-    <div className="max-w-xs">
-      <label className="block mb-2 font-medium">Department</label>
-      <select
-        className="w-full border rounded px-3 py-2"
-        value={selected}
-        onChange={e => setSelected(e.target.value)}
-      >
-        <option value="">Select department...</option>
-        {stores.map((store: any) => (
-          <option key={store.id} value={store.store_type}>
-            {store.name} ({store.store_type.replace('_', ' ')})
-          </option>
-        ))}
-      </select>
     </div>
   );
 }
