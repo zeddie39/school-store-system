@@ -1,5 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+type NotificationRow = {
+  id: string;
+  message: string;
+  department?: string;
+  file_name?: string;
+  uploader?: string;
+  created_at?: string;
+  is_read?: boolean;
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -20,56 +31,155 @@ import StatsCard from '../common/StatsCard';
 const AdminDashboard: React.FC = () => {
   const { stores } = useStores();
   const [selectedDept, setSelectedDept] = useState<string>('');
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState<NotificationRow[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+
+  // Real-time updates
+  const soundRef = useRef<HTMLAudioElement | null>(null);
+  const prevUnreadCount = useRef<number>(0);
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setLoadingNotifications(true);
+      // @ts-ignore: notifications table may not be in types yet
+      const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        setNotifications(data);
+        // Sound alert for new unread notifications
+        const unreadCount = data.filter((n: any) => !n.is_read).length;
+        if (unreadCount > prevUnreadCount.current) {
+          soundRef.current?.play();
+        }
+        prevUnreadCount.current = unreadCount;
+      } else {
+        setNotifications([]);
+      }
+      setLoadingNotifications(false);
+    };
+    fetchNotifications();
+    // Subscribe to changes
+    const subscription = supabase
+      .channel('notifications-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        fetchNotifications();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
+  const markAsRead = async (id: string) => {
+    // @ts-ignore: notifications table may not be in types yet
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    // fetchNotifications(); // Real-time will update
+  };
   // Simulated reports per department
   const departmentReports = [
+    // Library Store
     {
       id: 1,
-      name: 'Monthly Inventory Report - January 2024',
+      name: 'Library Inventory Overview - July 2025',
       type: 'Inventory',
-      generatedBy: 'Admin',
-      date: '2024-01-16',
+      generatedBy: 'Head Librarian',
+      date: '2025-07-01',
       format: 'PDF',
-      size: '2.4 MB',
+      size: '2.8 MB',
       department: 'library',
     },
     {
       id: 2,
-      name: 'User Activity Summary - Q4 2023',
-      type: 'User Activity',
-      generatedBy: 'System',
-      date: '2024-01-01',
+      name: 'Book Lending Trends - Q2 2025',
+      type: 'Usage',
+      generatedBy: 'Library Analyst',
+      date: '2025-06-30',
       format: 'Excel',
-      size: '1.8 MB',
+      size: '1.4 MB',
+      department: 'library',
+    },
+    // Laboratory Store
+    {
+      id: 3,
+      name: 'Lab Chemical Stock - July 2025',
+      type: 'Inventory',
+      generatedBy: 'Lab Manager',
+      date: '2025-07-01',
+      format: 'PDF',
+      size: '2.1 MB',
       department: 'laboratory',
     },
     {
-      id: 3,
-      name: 'Financial Report - December 2023',
-      type: 'Financial',
-      generatedBy: 'Bursar',
-      date: '2023-12-31',
+      id: 4,
+      name: 'Experiment Usage Report - Q2 2025',
+      type: 'Usage',
+      generatedBy: 'Science Teacher',
+      date: '2025-06-28',
+      format: 'Excel',
+      size: '1.6 MB',
+      department: 'laboratory',
+    },
+    // Kitchen Store
+    {
+      id: 5,
+      name: 'Kitchen Inventory - July 2025',
+      type: 'Inventory',
+      generatedBy: 'Head Chef',
+      date: '2025-07-01',
       format: 'PDF',
-      size: '3.2 MB',
+      size: '2.5 MB',
       department: 'kitchen',
     },
     {
-      id: 4,
-      name: 'Sports Store Usage - March 2024',
+      id: 6,
+      name: 'Meal Preparation Stats - Q2 2025',
       type: 'Usage',
-      generatedBy: 'Admin',
-      date: '2024-03-10',
+      generatedBy: 'Kitchen Analyst',
+      date: '2025-06-29',
+      format: 'Excel',
+      size: '1.3 MB',
+      department: 'kitchen',
+    },
+    // Sports Store
+    {
+      id: 7,
+      name: 'Sports Equipment Inventory - July 2025',
+      type: 'Inventory',
+      generatedBy: 'Sports Coordinator',
+      date: '2025-07-01',
       format: 'PDF',
-      size: '1.1 MB',
+      size: '2.2 MB',
       department: 'sports',
     },
     {
-      id: 5,
-      name: 'ICT Lab Equipment Report - April 2024',
+      id: 8,
+      name: 'Athlete Participation Report - Q2 2025',
+      type: 'Usage',
+      generatedBy: 'Coach',
+      date: '2025-06-27',
+      format: 'Excel',
+      size: '1.5 MB',
+      department: 'sports',
+    },
+    // ICT Lab Store
+    {
+      id: 9,
+      name: 'ICT Lab Device Inventory - July 2025',
       type: 'Inventory',
       generatedBy: 'ICT Admin',
-      date: '2024-04-05',
-      format: 'Excel',
+      date: '2025-07-01',
+      format: 'PDF',
       size: '2.0 MB',
+      department: 'ict_lab',
+    },
+    {
+      id: 10,
+      name: 'Software Usage Stats - Q2 2025',
+      type: 'Usage',
+      generatedBy: 'ICT Analyst',
+      date: '2025-06-30',
+      format: 'Excel',
+      size: '1.2 MB',
       department: 'ict_lab',
     },
   ];
@@ -147,6 +257,52 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Admin Notifications */}
+      <audio ref={soundRef} src="https://cdn.pixabay.com/audio/2022/07/26/audio_124b7b2b48.mp3" preload="auto" />
+      <Card>
+        <CardHeader>
+          <CardTitle>Admin Notifications</CardTitle>
+          <CardDescription>Latest department uploads and actions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 mb-3">
+            <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>All</Button>
+            <Button size="sm" variant={filter === 'unread' ? 'default' : 'outline'} onClick={() => setFilter('unread')}>Unread</Button>
+            <Button size="sm" variant={filter === 'read' ? 'default' : 'outline'} onClick={() => setFilter('read')}>Read</Button>
+          </div>
+          {loadingNotifications ? (
+            <div className="text-center py-4 text-muted-foreground">Loading notifications...</div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">No notifications yet.</div>
+          ) : (
+            <div className="space-y-3">
+              {notifications
+                .filter(note =>
+                  filter === 'all' ? true : filter === 'unread' ? !note.is_read : note.is_read
+                )
+                .slice(0, 8)
+                .map((note) => (
+                  <div key={note.id} className={`flex items-center justify-between p-3 rounded-lg ${note.is_read ? 'bg-muted' : 'bg-muted/50'}`}>
+                    <div className="flex-1">
+                      <p className="font-medium">{note.message}</p>
+                      <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                        {note.department && <Badge variant="outline">{note.department}</Badge>}
+                        {note.file_name && <span>File: {note.file_name}</span>}
+                        {note.uploader && <span>By: {note.uploader}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{note.created_at?.slice(0, 16).replace('T', ' ')}</span>
+                      {!note.is_read && (
+                        <Button size="xs" variant="secondary" onClick={() => markAsRead(note.id)}>Mark as Read</Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground">Welcome to the administrative control panel</p>
@@ -161,60 +317,71 @@ const AdminDashboard: React.FC = () => {
 
 
       {/* Store/Department Reports Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Store className="w-5 h-5" />
+      <Card className="bg-gradient-to-br from-gray-50 via-white to-gray-100 shadow-xl border-0">
+        <CardHeader className="pb-2">
+          <CardTitle
+            className="flex items-center gap-2"
+            style={{ fontFamily: 'Ubuntu, sans-serif', fontWeight: 700, fontSize: '2rem', letterSpacing: '0.02em', color: '#2d3748' }}
+          >
+            <Store className="w-6 h-6 text-primary" />
             Department Reports
           </CardTitle>
-          <CardDescription>
+          <CardDescription style={{ fontFamily: 'Ubuntu, sans-serif', fontWeight: 500, color: '#4a5568', fontSize: '1.1rem' }}>
             Select a department to view and download its reports
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 items-center mb-4">
-            <Select value={selectedDept} onValueChange={setSelectedDept}>
-              <SelectTrigger className="w-64">
+          <div className="flex flex-col md:flex-row gap-4 items-center mb-6">
+            <Select
+              value={selectedDept}
+              onValueChange={(value) => {
+                setSelectedDept(value);
+                if (value) {
+                  navigate(`/department-reports/${value}`);
+                }
+              }}
+            >
+              <SelectTrigger className="w-64 border-2 border-primary rounded-lg shadow-sm focus:ring-2 focus:ring-primary">
                 <SelectValue placeholder="Select Department" />
               </SelectTrigger>
               <SelectContent>
                 {stores.map((store) => (
-                  <SelectItem key={store.id} value={store.store_type}>
-                    {store.name} ({store.store_type.replace('_', ' ')})
+                  <SelectItem key={store.id} value={store.store_type} className="font-semibold">
+                    {store.name} <span className="text-xs text-muted-foreground">({store.store_type.replace('_', ' ')})</span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           {selectedDept ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+              <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="bg-muted">
-                    <th className="p-2 text-left">Report Name</th>
-                    <th className="p-2 text-left">Type</th>
-                    <th className="p-2 text-left">Generated By</th>
-                    <th className="p-2 text-left">Date</th>
-                    <th className="p-2 text-left">Format</th>
-                    <th className="p-2 text-left">Size</th>
-                    <th className="p-2 text-left">Action</th>
+                  <tr className="bg-primary/10" style={{ fontFamily: 'Ubuntu, sans-serif', fontWeight: 600, fontSize: '1.1rem', color: '#2d3748' }}>
+                    <th className="p-4 text-left">Report Name</th>
+                    <th className="p-4 text-left">Type</th>
+                    <th className="p-4 text-left">Generated By</th>
+                    <th className="p-4 text-left">Date</th>
+                    <th className="p-4 text-left">Format</th>
+                    <th className="p-4 text-left">Size</th>
+                    <th className="p-4 text-left">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {departmentReports.filter(r => r.department === selectedDept).length === 0 ? (
-                    <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">No reports found for this department.</td></tr>
+                    <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No reports found for this department.</td></tr>
                   ) : (
                     departmentReports.filter(r => r.department === selectedDept).map((report) => (
-                      <tr key={report.id} className="border-b">
-                        <td className="p-2">{report.name}</td>
-                        <td className="p-2">{report.type}</td>
-                        <td className="p-2">{report.generatedBy}</td>
-                        <td className="p-2">{report.date}</td>
-                        <td className="p-2">{report.format}</td>
-                        <td className="p-2">{report.size}</td>
-                        <td className="p-2">
-                          <Button size="sm" variant="outline" onClick={() => handleDownloadReport(report)}>
-                            <Download className="w-4 h-4 mr-1" /> Download
+                      <tr key={report.id} className="border-b hover:bg-primary/5 transition-all">
+                        <td className="p-4" style={{ fontFamily: 'Ubuntu, sans-serif', fontWeight: 500 }}>{report.name}</td>
+                        <td className="p-4"><Badge variant="outline" className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary border-0">{report.type}</Badge></td>
+                        <td className="p-4">{report.generatedBy}</td>
+                        <td className="p-4">{report.date}</td>
+                        <td className="p-4">{report.format}</td>
+                        <td className="p-4">{report.size}</td>
+                        <td className="p-4">
+                          <Button size="sm" variant="outline" onClick={() => handleDownloadReport(report)} style={{ fontFamily: 'Ubuntu, sans-serif', fontWeight: 500 }} className="rounded-full px-4 py-2 shadow hover:bg-primary/10">
+                            <Download className="w-4 h-4 mr-1 text-primary" /> Download
                           </Button>
                         </td>
                       </tr>
