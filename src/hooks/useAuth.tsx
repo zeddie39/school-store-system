@@ -2,6 +2,18 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+// Audit log utility
+async function logAudit({ action, actor, target, details }: { action: string, actor: string, target: string, details?: string }) {
+  try {
+    await supabase.from('audit_logs').insert({
+      action,
+      actor,
+      target,
+      timestamp: new Date().toISOString(),
+      details: details || null
+    });
+  } catch {}
+}
 import type { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -70,6 +82,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user && event === 'SIGNED_IN') {
+          // Audit log: user login
+          logAudit({
+            action: 'login',
+            actor: session.user.email,
+            target: session.user.email,
+            details: 'User logged in.'
+          });
           console.log('👤 User signed in, fetching profile...');
           setProfileError(null);
           

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import AuditLog from './AuditLog';
 import type { Database } from '@/integrations/supabase/types';
 
 const Reports: React.FC = () => {
@@ -193,6 +194,7 @@ const Reports: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <AuditLog />
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Reports & Analytics</h1>
         <Button variant="outline" onClick={fetchReports}>Refresh Data</Button>

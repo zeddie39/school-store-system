@@ -15,6 +15,7 @@ import {
   DollarSign,
   Package
 } from 'lucide-react';
+import ProfileEditDialog from '../auth/ProfileEditDialog';
 import { useToast } from '@/hooks/use-toast';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -97,66 +98,100 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
     return roleClasses[role];
   };
 
+  // Profile edit dialog state
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const handleProfileUpdated = (updated: { full_name: string; phone: string }) => {
+    // Optionally update UI or refetch profile
+    if (userProfile) {
+      userProfile.full_name = updated.full_name;
+      userProfile.phone = updated.phone;
+    }
+  };
   return (
-    <nav className="bg-sidebar border-b border-sidebar-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo and Brand */}
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-sidebar-primary/10 rounded-lg">
-              <School className="w-6 h-6 text-sidebar-primary" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-sidebar-foreground">
-                School Store System
-              </h1>
-            </div>
-          </div>
-
-          {/* Navigation Items */}
-          <div className="hidden md:flex items-center gap-4">
-            {getNavItems().map((item, index) => (
-              <Button
-                key={index}
-                variant={activeTab === item.path ? "default" : "ghost"}
-                size="sm"
-                className="text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent"
-                onClick={() => handleNavigation(item)}
-              >
-                <item.icon className="w-4 h-4 mr-2" />
-                {item.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* User Info and Logout */}
-          <div className="flex items-center gap-4">
+    <>
+      <nav className="bg-sidebar border-b border-sidebar-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Brand */}
             <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-sidebar-foreground">
-                  {userProfile.full_name}
-                </p>
-                <div className={getRoleBadgeClass(userRole)}>
-                  {getRoleDisplayName(userRole)}
-                </div>
+              <div className="p-2 bg-sidebar-primary/10 rounded-lg">
+                <School className="w-6 h-6 text-sidebar-primary" />
               </div>
-              <div className="p-2 bg-sidebar-accent rounded-full">
-                <User className="w-5 h-5 text-sidebar-foreground" />
+              <div>
+                <h1 className="text-lg font-semibold text-sidebar-foreground">
+                  School Store System
+                </h1>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLogout}
-              className="text-sidebar-foreground hover:text-destructive"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
+
+            {/* Navigation Items */}
+            <div className="hidden md:flex items-center gap-4">
+              {getNavItems().map((item, index) => (
+                <Button
+                  key={index}
+                  variant={activeTab === item.path ? "default" : "ghost"}
+                  size="sm"
+                  className="text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent"
+                  onClick={() => handleNavigation(item)}
+                >
+                  <item.icon className="w-4 h-4 mr-2" />
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* User Info, Profile Edit, and Logout */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    {userProfile.full_name}
+                  </p>
+                  <div className={getRoleBadgeClass(userRole)}>
+                    {getRoleDisplayName(userRole)}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="p-2"
+                  title="Edit Profile"
+                  onClick={() => setProfileDialogOpen(true)}
+                >
+                  <User className="w-5 h-5 text-sidebar-foreground" />
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLogout}
+                className="text-sidebar-foreground hover:text-destructive"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+      {/* Profile Edit Dialog */}
+      {profileDialogOpen && (
+        <React.Suspense fallback={null}>
+          {/* @ts-ignore */}
+          <ProfileEditDialog
+            open={profileDialogOpen}
+            onClose={() => setProfileDialogOpen(false)}
+            profile={{
+              id: userProfile.id,
+              full_name: userProfile.full_name,
+              phone: userProfile.phone || '',
+              email: userProfile.email
+            }}
+            onProfileUpdated={handleProfileUpdated}
+          />
+        </React.Suspense>
+      )}
+    </>
   );
 };
 

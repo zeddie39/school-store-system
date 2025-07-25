@@ -1,5 +1,7 @@
+import { supabase } from '@/integrations/supabase/client';
 
 import React, { useState } from 'react';
+import { sendEmailNotification } from '@/lib/emailNotifications';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,14 +82,25 @@ const UserManagement: React.FC = () => {
       lastLogin: 'Never'
     };
 
+
     setUsers(prev => [...prev, newUserData]);
     setNewUser({ name: '', email: '', role: '', department: '', phone: '' });
     setShowAddDialog(false);
-    
     toast({
       title: "User Added",
       description: `${newUser.name} has been added to the system.`
     });
+
+    // Email notification to user (placeholder)
+    try {
+      await sendEmailNotification({
+        to: newUser.email,
+        subject: 'Welcome to School Store System',
+        message: `Hello ${newUser.name}, your account has been created. Please log in to access the system.`
+      });
+    } catch (err) {
+      // Ignore email errors
+    }
   };
 
   const handleEditUser = (userId: number) => {
@@ -104,28 +117,59 @@ const UserManagement: React.FC = () => {
       user.id === selectedUser.id ? selectedUser : user
     ));
     
+
     setSelectedUser(null);
     toast({
       title: "User Updated",
       description: `${selectedUser.name}'s information has been updated.`
     });
+
+    // Email notification to user (placeholder)
+    try {
+      await sendEmailNotification({
+        to: selectedUser.email,
+        subject: 'Your profile was updated',
+        message: `Hello ${selectedUser.name}, your profile information was updated by an admin.`
+      });
+    } catch (err) {}
   };
 
   const handleDeleteUser = async (userId: number) => {
     setProcessingActions(prev => new Set(prev).add(`delete-${userId}`));
-    
-    setTimeout(() => {
+    setTimeout(async () => {
+      const userToDelete = users.find(u => u.id === userId);
       setUsers(prev => prev.filter(user => user.id !== userId));
       setProcessingActions(prev => {
         const newSet = new Set(prev);
         newSet.delete(`delete-${userId}`);
         return newSet;
       });
-      
       toast({
         title: "User Deleted",
         description: "User has been removed from the system."
       });
+      // Audit log: user deleted
+      try {
+        await supabase.from('audit_logs').insert({
+          action: 'delete_user',
+          actor: 'admin', // Replace with actual admin name/email if available
+          target: userToDelete?.email || '',
+          timestamp: new Date().toISOString(),
+          details: `Deleted user: ${userToDelete?.name} (${userToDelete?.email})`
+        });
+      } catch (err) {
+        // Ignore audit log errors
+      }
+      // Email notification to user (placeholder)
+      if (userToDelete) {
+        try {
+          await sendEmailNotification({
+            to: userToDelete.email,
+            subject: 'Account Deactivated',
+            message: `Hello ${userToDelete.name}, your account has been deactivated or removed by an admin.`
+          });
+        } catch (err) {}
+      }
     }, 1000);
   };
 

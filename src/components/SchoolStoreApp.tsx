@@ -78,6 +78,30 @@ const AppContent: React.FC = () => {
     );
   }
 
+  // If user profile exists but has no department or role, show waiting message
+  if (!profile.department || !profile.role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <AlertCircle className="w-12 h-12 text-warning" />
+            </div>
+            <CardTitle>Awaiting Department Assignment</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-center text-muted-foreground">
+              Your registration is complete. Please wait for the admin to assign your department and role. You will be notified once assigned.
+            </p>
+            <Button variant="outline" onClick={handleLogout} className="w-full">
+              Sign Out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <Dashboard 
       userRole={profile.role} 

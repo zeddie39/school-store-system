@@ -7,6 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+
+// Placeholder: Replace with your email sending logic (e.g., EmailJS, Resend, SMTP, etc.)
+async function sendAdminEmailNotification({ fullName, email }) {
+  // Example: Call your backend API or third-party email service here
+  // await fetch('/api/send-admin-notification', { method: 'POST', body: JSON.stringify({ fullName, email }) });
+  console.log(`📧 [Email] Notify admin: New user registered: ${fullName} (${email})`);
+}
 import { Eye, EyeOff, School } from 'lucide-react';
 import AuthStatus from './AuthStatus';
 
@@ -17,6 +24,10 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -120,15 +131,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     try {
       console.log('🔄 Attempting user registration...');
 
+
+      // Only set full_name and phone, leave department and role empty for admin assignment
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
         options: {
           data: {
             full_name: signupData.fullName,
-            phone: signupData.phone || '',
-            department: signupData.department || '',
-            role: signupData.role
+            phone: signupData.phone || ''
+            // department and role intentionally left blank for admin assignment
           },
           emailRedirectTo: `${window.location.origin}/`
         }
@@ -147,11 +159,32 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       console.log('✅ Signup response:', data);
 
       if (data.user) {
-        setAuthSuccess('Account created successfully! You can now log in.');
+        setAuthSuccess('Registration successful! Please wait for the admin to assign your department. You will be notified once assigned.');
         toast({
-          title: "Account created successfully",
-          description: "Welcome to the School Store System! You can now log in.",
+          title: "Registration successful",
+          description: "Please wait for the admin to assign your department. You will be notified once assigned.",
         });
+
+
+        // Notify admin of new registration (in-app notification)
+        try {
+          await supabase.from('notifications').insert({
+            message: `New user registered: ${signupData.fullName} (${signupData.email}). Please assign their department.`,
+            uploader: signupData.fullName,
+            department: null,
+            file_name: null
+          });
+        } catch (notifyErr) {
+          console.error('❌ Failed to notify admin of new registration:', notifyErr);
+        }
+
+        // Email notification to admin (placeholder)
+        try {
+          await sendAdminEmailNotification({ fullName: signupData.fullName, email: signupData.email });
+        } catch (emailErr) {
+          console.error('❌ Failed to send admin email notification:', emailErr);
+        }
+
         setIsLogin(true);
         // Clear form
         setSignupData({
@@ -172,6 +205,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     }
   };
 
+  // Password reset handler
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetMessage(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin + '/'
+      });
+      if (error) {
+        setResetMessage(error.message);
+      } else {
+        setResetMessage('Password reset email sent! Please check your inbox.');
+      }
+    } catch (err: any) {
+      setResetMessage(err.message || 'Failed to send reset email.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
       <Card className="w-full max-w-md">
@@ -188,7 +242,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         </CardHeader>
         <CardContent>
           <AuthStatus loading={loading} error={authError} success={authSuccess} />
-          
           <Tabs value={isLogin ? "login" : "signup"} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger 
@@ -253,9 +306,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Logging in...' : 'Login'}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <Button type="submit" className="w-1/2" disabled={loading}>
+                    {loading ? 'Logging in...' : 'Login'}
+                  </Button>
+                  <button
+                    type="button"
+                    className="text-xs text-primary underline ml-2"
+                    onClick={() => setShowResetDialog(true)}
+                    disabled={loading}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
               </form>
             </TabsContent>
 
@@ -386,7 +449,35 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
+    {/* Password Reset Dialog */}
+    {showResetDialog && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+          <h2 className="text-lg font-bold mb-2">Reset Password</h2>
+          <p className="text-sm text-muted-foreground mb-4">Enter your email address and we'll send you a password reset link.</p>
+          <form onSubmit={handlePasswordReset} className="space-y-4">
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              value={resetEmail}
+              onChange={e => setResetEmail(e.target.value)}
+              required
+              disabled={resetLoading}
+            />
+            {resetMessage && <div className="text-xs text-center text-primary mb-2">{resetMessage}</div>}
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1" disabled={resetLoading}>
+                {resetLoading ? 'Sending...' : 'Send Reset Link'}
+              </Button>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setShowResetDialog(false)} disabled={resetLoading}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+  </div>
   );
 };
 
