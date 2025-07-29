@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import LoginForm from './auth/LoginForm';
 import Dashboard from './dashboard/Dashboard';
 import { useAuth, AuthProvider } from '@/hooks/useAuth';
@@ -11,6 +11,8 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 const AppContent: React.FC = () => {
   const { user, profile, loading, profileError, signOut, createProfile } = useAuth();
   const { toast } = useToast();
+  const [retryingProfile, setRetryingProfile] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   const handleLogin = (user: any, profile: any) => {
     // Auth state is already managed by useAuth hook
@@ -25,8 +27,22 @@ const AppContent: React.FC = () => {
   };
 
   const handleRetryProfile = async () => {
-    if (user?.user_metadata) {
-      await createProfile(user.user_metadata);
+    setRetryingProfile(true);
+    setRetryError(null);
+    try {
+      if (user?.user_metadata) {
+        await createProfile(user.user_metadata);
+        toast({
+          title: "Profile created",
+          description: "Your user profile has been created. Please try logging in again.",
+        });
+      } else {
+        setRetryError("User metadata not found. Please sign out and try again.");
+      }
+    } catch (err: any) {
+      setRetryError(err?.message || "Failed to create profile. Please contact support.");
+    } finally {
+      setRetryingProfile(false);
     }
   };
 
@@ -60,12 +76,15 @@ const AppContent: React.FC = () => {
             <p className="text-center text-muted-foreground">
               {profileError || "Your user profile couldn't be loaded. This might be because your account is new or there was a setup issue."}
             </p>
+            {retryError && (
+              <p className="text-center text-destructive text-sm">{retryError}</p>
+            )}
             <div className="flex flex-col gap-2">
-              <Button onClick={handleRetryProfile} className="w-full">
+              <Button onClick={handleRetryProfile} className="w-full" disabled={retryingProfile}>
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Try to Create Profile
+                {retryingProfile ? "Creating Profile..." : "Try to Create Profile"}
               </Button>
-              <Button variant="outline" onClick={handleLogout} className="w-full">
+              <Button variant="outline" onClick={handleLogout} className="w-full" disabled={retryingProfile}>
                 Sign Out and Try Again
               </Button>
             </div>

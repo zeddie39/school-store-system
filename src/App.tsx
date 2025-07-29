@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import DepartmentPage from "./pages/DepartmentPage";
+import StoreDepartmentPage from "./pages/StoreDepartmentPage";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/stores" element={<StoresPage />} />
           <Route path="/department-reports/:department" element={<DepartmentReportPage />} />
+          <Route path="/departments/:id" element={<DepartmentPage />} />
+          <Route path="/stores/:department" element={<StoreDepartmentPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
