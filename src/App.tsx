@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DepartmentPage from "./pages/DepartmentPage";
+import DepartmentDetails from "./pages/DepartmentDetails";
 import StoreDepartmentPage from "./pages/StoreDepartmentPage";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/stores" element={<StoresPage />} />
           <Route path="/department-reports/:department" element={<DepartmentReportPage />} />
           <Route path="/departments/:id" element={<DepartmentPage />} />
+          <Route path="/departments/:deptId" element={<DepartmentDetails />} />
           <Route path="/stores/:department" element={<StoreDepartmentPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
