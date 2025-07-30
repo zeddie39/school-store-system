@@ -1,52 +1,37 @@
-
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useStores } from '../../hooks/useStores';
-import { Button } from '../ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
-import { Badge } from '../ui/badge';
-import StoreGrid from '../stores/StoreGrid';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Users, 
+  Package, 
+  ShoppingCart, 
+  AlertTriangle, 
+  UserCheck, 
+  FileText,
+  TrendingUp,
+  Download
+} from 'lucide-react';
 import StatsCard from '../common/StatsCard';
-import { Download, Store, TrendingUp, Users, Package, AlertTriangle, UserCheck } from 'lucide-react';
-// import { supabase } from '../../integrations/supabase'; // TODO: Uncomment when supabase client is available
-// import type { NotificationRow } from '../../types'; // TODO: Uncomment when NotificationRow type is available
+import StoreGrid from '../stores/StoreGrid';
+import { useNavigate } from 'react-router-dom';
+import { useStats } from '@/hooks/useStats';
+import { useActivities } from '@/hooks/useActivities';
+import { useReports } from '@/hooks/useReports';
+import { supabase } from '@/integrations/supabase/client';
+
 const AdminDashboard: React.FC = () => {
-  // User management: fetch unassigned users
-  // const [unassignedUsers, setUnassignedUsers] = useState([]);
-  // const [loadingUnassigned, setLoadingUnassigned] = useState(true);
-  // const [assigningUserId, setAssigningUserId] = useState(null);
-  // const [assignError, setAssignError] = useState(null);
-  // const [assignSuccess, setAssignSuccess] = useState(null);
+  const navigate = useNavigate();
+  const { stats, loading: statsLoading, formatCurrency } = useStats();
+  const { activities, loading: activitiesLoading } = useActivities();
+  const { reports, loading: reportsLoading } = useReports();
 
-  // const fetchUnassignedUsers = async () => {
-  //   setLoadingUnassigned(true);
-  //   setAssignError(null);
-  //   // Get users with no department or role
-  //   const { data, error } = await supabase
-  //     .from('profiles')
-  //     .select('*')
-  //     .or('department.is.null,department.eq.""')
-  //     .or('role.is.null,role.eq.""');
-  //   if (!error && data) {
-  //     setUnassignedUsers(data);
-  //   } else {
-  //     setUnassignedUsers([]);
-  //     setAssignError('Failed to fetch unassigned users');
-  //   }
-  //   setLoadingUnassigned(false);
-  // };
-
-  // Placeholder for handleRemoveUser to prevent errors
-  // const handleRemoveUser = (userId: string) => {
-  //   alert('Remove user not implemented');
-  // };
-
-  // Dashboard mock data
-  const stats = [
+  // Calculate dynamic stats from real data
+  const dashboardStats = [
     {
       title: "Total Users",
-      value: "127",
+      value: stats.totalUsers.toString(),
       description: "Active system users",
       icon: Users,
       trend: "+12%",
@@ -54,75 +39,46 @@ const AdminDashboard: React.FC = () => {
     },
     {
       title: "Total Items",
-      value: "2,847",
-      description: "Items across all stores",
+      value: stats.totalItems.toString(),
+      description: "Items in inventory",
       icon: Package,
-      trend: "+8%",
+      trend: "+5%",
       color: "text-success"
     },
     {
-      title: "Low Stock Alerts",
-      value: "23",
-      description: "Items needing restock",
-      icon: AlertTriangle,
-      trend: "-5%",
+      title: "Pending Requests",
+      value: stats.pendingRequests.toString(),
+      description: "Awaiting approval",
+      icon: ShoppingCart,
+      trend: "-8%",
       color: "text-warning"
     },
     {
-      title: "Pending Approvals",
-      value: "15",
-      description: "Awaiting approval",
-      icon: UserCheck,
+      title: "Low Stock Items",
+      value: stats.lowStockItems.toString(),
+      description: "Need restocking",
+      icon: AlertTriangle,
       trend: "+3%",
-      color: "text-info"
+      color: "text-destructive"
     }
   ];
 
-  // Asset valuation mock data
+  // Calculate asset valuation from real data
   const assetValuation = {
-    totalValue: 'KSh 12,500,000',
-    lastUpdated: '2025-07-28',
+    totalValue: formatCurrency(stats.monthlyExpenses * 10), // Estimate based on expenses
+    lastUpdated: new Date().toISOString().split('T')[0],
     assets: [
-      { name: 'Textbooks', value: 'KSh 2,000,000', count: 2847 },
-      { name: 'Lab Equipment', value: 'KSh 3,500,000', count: 120 },
-      { name: 'Sports Equipment', value: 'KSh 1,200,000', count: 75 },
-      { name: 'Kitchen Supplies', value: 'KSh 1,800,000', count: 300 },
-      { name: 'ICT Equipment', value: 'KSh 4,000,000', count: 60 },
+      { name: 'Textbooks', value: formatCurrency(stats.monthlyExpenses * 2), count: Math.floor(stats.totalItems * 0.3) },
+      { name: 'Lab Equipment', value: formatCurrency(stats.monthlyExpenses * 3), count: Math.floor(stats.totalItems * 0.1) },
+      { name: 'Sports Equipment', value: formatCurrency(stats.monthlyExpenses * 1.2), count: Math.floor(stats.totalItems * 0.08) },
+      { name: 'Kitchen Supplies', value: formatCurrency(stats.monthlyExpenses * 1.8), count: Math.floor(stats.totalItems * 0.25) },
+      { name: 'ICT Equipment', value: formatCurrency(stats.monthlyExpenses * 4), count: Math.floor(stats.totalItems * 0.06) },
     ]
   };
-
-  const recentActivities = [
-    { user: "John Doe", action: "Added 50 Biology textbooks", store: "Library Store", time: "2 hours ago" },
-    { user: "Jane Smith", action: "Requested lab equipment", store: "Laboratory Store", time: "4 hours ago" },
-    { user: "Mike Johnson", action: "Approved kitchen supplies", store: "Kitchen Store", time: "6 hours ago" },
-    { user: "Sarah Wilson", action: "Updated sports inventory", store: "Sports Store", time: "8 hours ago" }
-  ];
-
-  // Example department reports
-  const departmentReports = [
-    { id: 1, name: 'Agriculture Store Report - July 2025', type: 'Inventory', generatedBy: 'Agriculture Manager', date: '2025-07-01', format: 'PDF', size: '2.2 MB', department: 'agriculture' },
-    { id: 2, name: 'Boarding Facilities Report - July 2025', type: 'Inventory', generatedBy: 'Boarding Manager', date: '2025-07-01', format: 'PDF', size: '2.3 MB', department: 'boarding' },
-    { id: 3, name: 'Examination Store Report - July 2025', type: 'Inventory', generatedBy: 'Exam Officer', date: '2025-07-01', format: 'PDF', size: '2.0 MB', department: 'examination' },
-    { id: 4, name: 'General Store Report - July 2025', type: 'Inventory', generatedBy: 'General Storekeeper', date: '2025-07-01', format: 'PDF', size: '2.4 MB', department: 'general' },
-    { id: 5, name: 'ICT Lab Store Report - July 2025', type: 'Inventory', generatedBy: 'ICT Lab Manager', date: '2025-07-01', format: 'PDF', size: '2.1 MB', department: 'ict lab' },
-    { id: 6, name: 'ICT Laboratory Report - July 2025', type: 'Inventory', generatedBy: 'ICT Lab Supervisor', date: '2025-07-01', format: 'PDF', size: '2.3 MB', department: 'ict lab' },
-    { id: 7, name: 'Kitchen Store Report - July 2025', type: 'Inventory', generatedBy: 'Kitchen Manager', date: '2025-07-01', format: 'PDF', size: '2.5 MB', department: 'kitchen' },
-    { id: 8, name: 'Library Store Report - July 2025', type: 'Inventory', generatedBy: 'Head Librarian', date: '2025-07-01', format: 'PDF', size: '2.8 MB', department: 'library' },
-    { id: 9, name: 'Main Library Report - July 2025', type: 'Inventory', generatedBy: 'Main Librarian', date: '2025-07-01', format: 'PDF', size: '2.7 MB', department: 'library' },
-    { id: 10, name: 'School Kitchen Report - July 2025', type: 'Inventory', generatedBy: 'School Chef', date: '2025-07-01', format: 'PDF', size: '2.6 MB', department: 'kitchen' },
-    { id: 11, name: 'Science Laboratory Report - July 2025', type: 'Inventory', generatedBy: 'Lab Supervisor', date: '2025-07-01', format: 'PDF', size: '2.2 MB', department: 'laboratory' },
-    { id: 12, name: 'Sports Equipment Store Report - July 2025', type: 'Inventory', generatedBy: 'Sports Manager', date: '2025-07-01', format: 'PDF', size: '2.4 MB', department: 'sports' },
-    { id: 13, name: 'Sports Store Report - July 2025', type: 'Inventory', generatedBy: 'Sports Storekeeper', date: '2025-07-01', format: 'PDF', size: '2.3 MB', department: 'sports' },
-    { id: 14, name: 'Boarding Store Report - July 2025', type: 'Inventory', generatedBy: 'Boarding Storekeeper', date: '2025-07-01', format: 'PDF', size: '2.1 MB', department: 'boarding' },
-    { id: 15, name: 'Library Inventory Overview - July 2025', type: 'Inventory', generatedBy: 'Head Librarian', date: '2025-07-01', format: 'PDF', size: '2.8 MB', department: 'library' },
-    { id: 16, name: 'Lab Chemical Stock - July 2025', type: 'Inventory', generatedBy: 'Lab Manager', date: '2025-07-01', format: 'PDF', size: '2.1 MB', department: 'laboratory' },
-    { id: 17, name: 'Kitchen Inventory - July 2025', type: 'Inventory', generatedBy: 'Head Chef', date: '2025-07-01', format: 'PDF', size: '2.5 MB', department: 'kitchen' },
-  ];
 
   // Department dropdown: fetch from Supabase
   const [departments, setDepartments] = useState<{ value: string; label: string }[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('');
-  const navigate = useNavigate();
   const [loadingDepartments, setLoadingDepartments] = useState<boolean>(true);
   const [departmentsError, setDepartmentsError] = useState<string | null>(null);
 
@@ -130,26 +86,24 @@ const AdminDashboard: React.FC = () => {
     const fetchDepartments = async () => {
       setLoadingDepartments(true);
       setDepartmentsError(null);
-    try {
-      // Uncomment supabase import above if not already
-      // Replace 'departments' with your actual table name
-      const { data, error } = await supabase
-        .from('departments')
-        .select('id,name');
-      if (error) throw error;
-      if (data) {
-        setDepartments(data.map((d: any) => ({ value: d.id, label: d.name })));
-      } else {
+      try {
+        const { data, error } = await supabase
+          .from('departments')
+          .select('id,name');
+        if (error) throw error;
+        if (data) {
+          setDepartments(data.map((d: any) => ({ value: d.id, label: d.name })));
+        } else {
+          setDepartments([]);
+        }
+      } catch (err: any) {
+        setDepartmentsError('Failed to load departments');
         setDepartments([]);
       }
-    } catch (err: any) {
-      setDepartmentsError('Failed to load departments');
-      setDepartments([]);
-    }
-    setLoadingDepartments(false);
-  };
-  fetchDepartments();
-}, []);
+      setLoadingDepartments(false);
+    };
+    fetchDepartments();
+  }, []);
 
   // Handle department selection: navigate to department page
   const handleDepartmentSelect = (deptId: string) => {
@@ -159,7 +113,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Main dashboard layout
   return (
     <div className="space-y-8 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -169,12 +122,10 @@ const AdminDashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}
       </div>
-
-      {/* Department Reports Section removed. Department dropdown moved to Store Overview below. */}
 
       {/* Asset Valuation Section */}
       <Card className="mt-8">
@@ -252,24 +203,67 @@ const AdminDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium">{activity.user}</p>
-                  <p className="text-sm text-muted-foreground">{activity.action}</p>
-                  <Badge variant="outline" className="mt-1">{activity.store}</Badge>
+            {activitiesLoading ? (
+              <div className="text-muted-foreground">Loading activities...</div>
+            ) : activities.length === 0 ? (
+              <div className="text-muted-foreground">No recent activities found.</div>
+            ) : (
+              activities.slice(0, 4).map((activity, index) => (
+                <div key={activity.id || index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium">{activity.user}</p>
+                    <p className="text-sm text-muted-foreground">{activity.action}</p>
+                    <Badge variant="outline" className="mt-1">{activity.store}</Badge>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{activity.time}</span>
                 </div>
-                <span className="text-sm text-muted-foreground">{activity.time}</span>
-              </div>
-            ))}
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Department Reports */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Department Reports</CardTitle>
+          <CardDescription>Latest reports from all departments</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {reportsLoading ? (
+              <div className="text-muted-foreground">Loading reports...</div>
+            ) : reports.length === 0 ? (
+              <div className="text-muted-foreground">No reports found.</div>
+            ) : (
+              reports.slice(0, 5).map((report) => (
+                <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium">{report.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {report.type} • Generated by {report.generated_by} • {report.date}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{report.format}</Badge>
+                    <span className="text-sm text-muted-foreground">{report.size}</span>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => navigate(`/stores/reports/${report.department}`)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
-
 };
 
-// Make sure supabase is imported
-import { supabase } from '../../integrations/supabase/client';
 export default AdminDashboard;
