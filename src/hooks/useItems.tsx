@@ -3,7 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
-type Item = Database['public']['Tables']['items']['Row'];
+type Item = Database['public']['Tables']['items']['Row'] & {
+  store?: {
+    name: string;
+    store_type: string;
+  };
+  added_by_profile?: {
+    full_name: string;
+  };
+};
 type ItemInsert = Database['public']['Tables']['items']['Insert'];
 type ItemUpdate = Database['public']['Tables']['items']['Update'];
 
