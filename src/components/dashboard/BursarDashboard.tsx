@@ -19,16 +19,25 @@ import {
 } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { useToast } from '@/hooks/use-toast';
+import { useBudgets } from '@/hooks/useBudgets';
+import { useExpenses } from '@/hooks/useExpenses';
 
 const BursarDashboard: React.FC = () => {
   const { toast } = useToast();
-  const [processingPayments, setProcessingPayments] = useState<Set<number>>(new Set());
+  const { budgets, loading: budgetsLoading } = useBudgets();
+  const { expenses, updateExpenseStatus, loading: expensesLoading } = useExpenses();
+  const [processingPayments, setProcessingPayments] = useState<Set<string>>(new Set());
   const [activeView, setActiveView] = useState<'overview' | 'budget' | 'expenses' | 'reports'>('overview');
+
+  // Calculate dynamic stats from real data
+  const totalBudget = budgets.reduce((sum, budget) => sum + budget.allocated_amount, 0);
+  const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent_amount, 0);
+  const pendingExpenses = expenses.filter(exp => exp.status === 'pending').reduce((sum, exp) => sum + exp.amount, 0);
 
   const stats = [
     {
       title: "Total Budget",
-      value: "KSH 12,500,000",
+      value: `KSH ${totalBudget.toLocaleString()}`,
       description: "Annual allocation",
       icon: DollarSign,
       trend: "+5%",
@@ -36,7 +45,7 @@ const BursarDashboard: React.FC = () => {
     },
     {
       title: "Spent This Month",
-      value: "KSH 1,248,000",
+      value: `KSH ${totalSpent.toLocaleString()}`,
       description: "Current spending",
       icon: TrendingDown,
       trend: "+8%",
@@ -44,7 +53,7 @@ const BursarDashboard: React.FC = () => {
     },
     {
       title: "Remaining Budget",
-      value: "KSH 8,752,000",
+      value: `KSH ${(totalBudget - totalSpent).toLocaleString()}`,
       description: "Available funds",
       icon: TrendingUp,
       trend: "-3%",
@@ -52,7 +61,7 @@ const BursarDashboard: React.FC = () => {
     },
     {
       title: "Pending Payments",
-      value: "KSH 524,000",
+      value: `KSH ${pendingExpenses.toLocaleString()}`,
       description: "Awaiting approval",
       icon: CreditCard,
       trend: "+2",
@@ -60,42 +69,14 @@ const BursarDashboard: React.FC = () => {
     }
   ];
 
-  const [expenses, setExpenses] = useState([
-    {
-      id: 1,
-      category: "Laboratory Equipment",
-      amount: "KSH 320,000",
-      date: "2024-01-15",
-      vendor: "Science Supply Co.",
-      status: "paid",
-      department: "Science Lab"
-    },
-    {
-      id: 2,
-      category: "Library Books",
-      amount: "KSH 180,000",
-      date: "2024-01-14",
-      vendor: "Academic Publishers",
-      status: "pending",
-      department: "Library"
-    },
-    {
-      id: 3,
-      category: "Kitchen Supplies",
-      amount: "KSH 95,000",
-      date: "2024-01-13",
-      vendor: "Food Service Inc.",
-      status: "approved",
-      department: "Kitchen"
-    }
-  ]);
-
-  const departmentBudgets = [
-    { name: "Science Laboratory", allocated: "KSH 2,500,000", spent: "KSH 1,850,000", remaining: "KSH 650,000", percentage: 74 },
-    { name: "Library", allocated: "KSH 1,500,000", spent: "KSH 820,000", remaining: "KSH 680,000", percentage: 55 },
-    { name: "Sports", allocated: "KSH 1,200,000", spent: "KSH 910,000", remaining: "KSH 290,000", percentage: 76 },
-    { name: "Kitchen", allocated: "KSH 2,000,000", spent: "KSH 1,530,000", remaining: "KSH 470,000", percentage: 77 }
-  ];
+  const departmentBudgets = budgets.map(budget => ({
+    id: budget.id,
+    name: budget.department_name,
+    allocated: `KSH ${budget.allocated_amount.toLocaleString()}`,
+    spent: `KSH ${budget.spent_amount.toLocaleString()}`,
+    remaining: `KSH ${(budget.allocated_amount - budget.spent_amount).toLocaleString()}`,
+    percentage: Math.round((budget.spent_amount / budget.allocated_amount) * 100)
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -170,25 +151,24 @@ const BursarDashboard: React.FC = () => {
     });
   };
 
-  const handleProcessPayment = (expenseId: number) => {
+  const handleProcessPayment = (expenseId: string) => {
     setProcessingPayments(prev => new Set(prev).add(expenseId));
     setTimeout(() => {
-      setExpenses(prev => prev.map(expense => 
-        expense.id === expenseId ? { ...expense, status: 'paid' } : expense
-      ));
+      updateExpenseStatus(expenseId, 'paid');
       setProcessingPayments(prev => {
         const newSet = new Set(prev);
         newSet.delete(expenseId);
         return newSet;
       });
+      const expense = expenses.find(e => e.id === expenseId);
       toast({
         title: "Payment Processed",
-        description: `Payment of ${expenses.find(e => e.id === expenseId)?.amount} has been completed.`,
+        description: `Payment of KSH ${expense?.amount.toLocaleString()} has been completed.`,
       });
     }, 2000);
   };
 
-  const handleViewDetails = (expenseId: number) => {
+  const handleViewDetails = (expenseId: string) => {
     toast({
       title: "Expense Details",
       description: `Opening detailed view for expense #${expenseId}...`,
@@ -220,11 +200,11 @@ const BursarDashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-lg">{dept.name}</h3>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEditBudget(dept.name)}>
+                  <Button variant="outline" size="sm" onClick={() => handleEditBudget(dept.id)}>
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteBudget(dept.name)}>
+                  <Button variant="outline" size="sm" onClick={() => handleDeleteBudget(dept.id)}>
                     <Trash2 className="w-4 h-4 mr-1" />
                     Delete
                   </Button>
@@ -279,7 +259,7 @@ const BursarDashboard: React.FC = () => {
                   <p className="text-sm text-muted-foreground">{expense.department}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-lg">{expense.amount}</p>
+                  <p className="font-semibold text-lg">KSH {expense.amount.toLocaleString()}</p>
                   <Badge className={getStatusColor(expense.status)}>
                     {expense.status}
                   </Badge>
@@ -293,14 +273,14 @@ const BursarDashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">{expense.date}</p>
+                  <p className="font-medium">{expense.expense_date}</p>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="w-4 h-4" />
-                  {expense.date}
+                  {expense.expense_date}
                 </div>
                 <div className="flex gap-2">
                   <Button 
@@ -507,7 +487,7 @@ const BursarDashboard: React.FC = () => {
                           <p className="text-sm text-muted-foreground">{expense.department}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-lg">{expense.amount}</p>
+                          <p className="font-medium text-lg">KSH {expense.amount.toLocaleString()}</p>
                           <Badge className={getStatusColor(expense.status)}>
                             {expense.status}
                           </Badge>
@@ -521,14 +501,14 @@ const BursarDashboard: React.FC = () => {
                         </div>
                         <div>
                           <span className="text-muted-foreground">Date:</span>
-                          <p className="font-medium">{expense.date}</p>
+                          <p className="font-medium">{expense.expense_date}</p>
                         </div>
                       </div>
                       
                       <div className="flex items-center justify-between pt-2">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="w-4 h-4" />
-                          {expense.date}
+                          {expense.expense_date}
                         </div>
                         <div className="flex gap-2">
                           {expense.status === 'pending' && (

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,16 +18,26 @@ import {
 } from 'lucide-react';
 import StatsCard from '../common/StatsCard';
 import { useToast } from '@/hooks/use-toast';
+import { useSuppliers } from '@/hooks/useSuppliers';
+import { useOrders } from '@/hooks/useOrders';
 
 const ProcurementDashboard: React.FC = () => {
   const { toast } = useToast();
+  const { suppliers, loading: suppliersLoading } = useSuppliers();
+  const { orders, updateOrderStatus, loading: ordersLoading } = useOrders();
   const [activeView, setActiveView] = useState<'overview' | 'procurement' | 'orders' | 'suppliers'>('overview');
-  const [processingOrders, setProcessingOrders] = useState<Set<number>>(new Set());
+  const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
+
+  // Calculate dynamic stats from real data
+  const totalOrders = orders.length;
+  const activeOrders = orders.filter(order => order.status === 'processing').length;
+  const completedOrders = orders.filter(order => order.status === 'delivered').length;
+  const totalBudget = orders.reduce((sum, order) => sum + order.total_cost, 0);
 
   const stats = [
     {
       title: "Total Procurements",
-      value: "156",
+      value: totalOrders.toString(),
       description: "This month",
       icon: ShoppingCart,
       trend: "+12%",
@@ -36,7 +45,7 @@ const ProcurementDashboard: React.FC = () => {
     },
     {
       title: "Active Orders",
-      value: "23",
+      value: activeOrders.toString(),
       description: "Currently processing",
       icon: Truck,
       trend: "+5",
@@ -44,7 +53,7 @@ const ProcurementDashboard: React.FC = () => {
     },
     {
       title: "Completed Orders",
-      value: "89",
+      value: completedOrders.toString(),
       description: "This month",
       icon: CheckCircle,
       trend: "+8%",
@@ -52,80 +61,11 @@ const ProcurementDashboard: React.FC = () => {
     },
     {
       title: "Monthly Budget",
-      value: "KSH 2,500,000",
+      value: `KSH ${totalBudget.toLocaleString()}`,
       description: "Procurement budget",
       icon: TrendingUp,
       trend: "+15%",
       color: "text-info"
-    }
-  ];
-
-  const [orders, setOrders] = useState([
-    {
-      id: 1,
-      item: "Laboratory Equipment",
-      supplier: "Science Supply Co.",
-      quantity: 15,
-      unitPrice: "KSH 45,000",
-      totalCost: "KSH 675,000",
-      status: "pending",
-      orderDate: "2024-01-15",
-      expectedDelivery: "2024-01-25"
-    },
-    {
-      id: 2,
-      item: "Library Books",
-      supplier: "Academic Publishers",
-      quantity: 100,
-      unitPrice: "KSH 2,500",
-      totalCost: "KSH 250,000",
-      status: "processing",
-      orderDate: "2024-01-14",
-      expectedDelivery: "2024-01-22"
-    },
-    {
-      id: 3,
-      item: "Sports Equipment",
-      supplier: "Sports World Ltd",
-      quantity: 25,
-      unitPrice: "KSH 8,000",
-      totalCost: "KSH 200,000",
-      status: "delivered",
-      orderDate: "2024-01-10",
-      expectedDelivery: "2024-01-18"
-    }
-  ]);
-
-  const suppliers = [
-    {
-      id: 1,
-      name: "Science Supply Co.",
-      contact: "info@sciencesupply.com",
-      phone: "+254 700 123 456",
-      category: "Laboratory Equipment",
-      rating: 4.8,
-      totalOrders: 45,
-      totalValue: "KSH 2,340,000"
-    },
-    {
-      id: 2,
-      name: "Academic Publishers",
-      contact: "orders@academic.com",
-      phone: "+254 700 234 567",
-      category: "Books & Literature",
-      rating: 4.6,
-      totalOrders: 32,
-      totalValue: "KSH 1,890,000"
-    },
-    {
-      id: 3,
-      name: "Sports World Ltd",
-      contact: "sales@sportsworld.com",
-      phone: "+254 700 345 678",
-      category: "Sports Equipment",
-      rating: 4.7,
-      totalOrders: 28,
-      totalValue: "KSH 1,560,000"
     }
   ];
 
@@ -146,12 +86,10 @@ const ProcurementDashboard: React.FC = () => {
     });
   };
 
-  const handleProcessOrder = (orderId: number) => {
+  const handleProcessOrder = (orderId: string) => {
     setProcessingOrders(prev => new Set(prev).add(orderId));
     setTimeout(() => {
-      setOrders(prev => prev.map(order => 
-        order.id === orderId ? { ...order, status: 'processing' } : order
-      ));
+      updateOrderStatus(orderId, 'processing');
       setProcessingOrders(prev => {
         const newSet = new Set(prev);
         newSet.delete(orderId);
@@ -159,32 +97,30 @@ const ProcurementDashboard: React.FC = () => {
       });
       toast({
         title: "Order Processed",
-        description: `Order #${orderId} has been moved to processing.`,
+        description: `Order ${orderId} has been moved to processing.`,
       });
     }, 2000);
   };
 
-  const handleViewOrder = (orderId: number) => {
+  const handleViewOrder = (orderId: string) => {
     toast({
       title: "View Order Details",
-      description: `Opening detailed view for order #${orderId}...`,
+      description: `Opening detailed view for order ${orderId}...`,
     });
   };
 
-  const handleEditOrder = (orderId: number) => {
+  const handleEditOrder = (orderId: string) => {
     toast({
       title: "Edit Order",
-      description: `Opening order editor for order #${orderId}...`,
+      description: `Opening order editor for order ${orderId}...`,
     });
   };
 
-  const handleCancelOrder = (orderId: number) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status: 'cancelled' } : order
-    ));
+  const handleCancelOrder = (orderId: string) => {
+    updateOrderStatus(orderId, 'cancelled');
     toast({
       title: "Order Cancelled",
-      description: `Order #${orderId} has been cancelled.`,
+      description: `Order ${orderId} has been cancelled.`,
       variant: "destructive",
     });
   };
@@ -196,17 +132,17 @@ const ProcurementDashboard: React.FC = () => {
     });
   };
 
-  const handleEditSupplier = (supplierId: number) => {
+  const handleEditSupplier = (supplierId: string) => {
     toast({
       title: "Edit Supplier",
-      description: `Opening supplier editor for supplier #${supplierId}...`,
+      description: `Opening supplier editor for supplier ${supplierId}...`,
     });
   };
 
-  const handleViewSupplier = (supplierId: number) => {
+  const handleViewSupplier = (supplierId: string) => {
     toast({
       title: "View Supplier Details",
-      description: `Opening detailed view for supplier #${supplierId}...`,
+      description: `Opening detailed view for supplier ${supplierId}...`,
     });
   };
 
@@ -226,11 +162,11 @@ const ProcurementDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-semibold text-lg">{order.item}</h3>
-                  <p className="text-sm text-muted-foreground">{order.supplier}</p>
+                  <h3 className="font-semibold text-lg">{order.item_name}</h3>
+                  <p className="text-sm text-muted-foreground">{order.supplier_name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-lg">{order.totalCost}</p>
+                  <p className="font-semibold text-lg">KSH {order.total_cost.toLocaleString()}</p>
                   <Badge className={getStatusColor(order.status)}>
                     {order.status}
                   </Badge>
@@ -244,22 +180,22 @@ const ProcurementDashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Unit Price</p>
-                  <p className="font-medium">{order.unitPrice}</p>
+                  <p className="font-medium">KSH {order.unit_price.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Order Date</p>
-                  <p className="font-medium">{order.orderDate}</p>
+                  <p className="font-medium">{order.order_date}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Expected Delivery</p>
-                  <p className="font-medium">{order.expectedDelivery}</p>
+                  <p className="font-medium">{order.expected_delivery_date || 'TBD'}</p>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="w-4 h-4" />
-                  {order.orderDate}
+                  {order.order_date}
                 </div>
                 <div className="flex gap-2">
                   <Button 
@@ -329,8 +265,8 @@ const ProcurementDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-semibold">Order #{order.id}</h3>
-                  <p className="text-sm text-muted-foreground">{order.item}</p>
+                  <h3 className="font-semibold">{order.order_number}</h3>
+                  <p className="text-sm text-muted-foreground">{order.item_name}</p>
                 </div>
                 <Badge className={getStatusColor(order.status)}>
                   {order.status}
@@ -340,15 +276,15 @@ const ProcurementDashboard: React.FC = () => {
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Supplier</p>
-                  <p className="font-medium">{order.supplier}</p>
+                  <p className="font-medium">{order.supplier_name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Cost</p>
-                  <p className="font-medium">{order.totalCost}</p>
+                  <p className="font-medium">KSH {order.total_cost.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Expected Delivery</p>
-                  <p className="font-medium">{order.expectedDelivery}</p>
+                  <p className="font-medium">{order.expected_delivery_date || 'TBD'}</p>
                 </div>
               </div>
               
@@ -390,22 +326,22 @@ const ProcurementDashboard: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">Rating: {supplier.rating}/5</p>
-                  <p className="text-sm text-muted-foreground">Total Value: {supplier.totalValue}</p>
+                  <p className="text-sm text-muted-foreground">Total Value: KSH {supplier.total_value.toLocaleString()}</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Contact</p>
-                  <p className="font-medium">{supplier.contact}</p>
+                  <p className="font-medium">{supplier.contact_email || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{supplier.phone}</p>
+                  <p className="font-medium">{supplier.phone || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Orders</p>
-                  <p className="font-medium">{supplier.totalOrders}</p>
+                  <p className="font-medium">{supplier.total_orders}</p>
                 </div>
               </div>
               
@@ -507,11 +443,11 @@ const ProcurementDashboard: React.FC = () => {
                     <div key={order.id} className="p-4 border rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">{order.item}</p>
-                          <p className="text-sm text-muted-foreground">{order.supplier}</p>
+                          <p className="font-medium">{order.item_name}</p>
+                          <p className="text-sm text-muted-foreground">{order.supplier_name}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-lg">{order.totalCost}</p>
+                          <p className="font-medium text-lg">KSH {order.total_cost.toLocaleString()}</p>
                           <Badge className={getStatusColor(order.status)}>
                             {order.status}
                           </Badge>
@@ -525,14 +461,14 @@ const ProcurementDashboard: React.FC = () => {
                         </div>
                         <div>
                           <span className="text-muted-foreground">Expected Delivery:</span>
-                          <p className="font-medium">{order.expectedDelivery}</p>
+                          <p className="font-medium">{order.expected_delivery_date || 'TBD'}</p>
                         </div>
                       </div>
                       
                       <div className="flex items-center justify-between pt-2">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="w-4 h-4" />
-                          {order.orderDate}
+                          {order.order_date}
                         </div>
                         <div className="flex gap-2">
                           <Button 

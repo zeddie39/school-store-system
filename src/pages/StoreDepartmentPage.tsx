@@ -1,14 +1,15 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
+import { useItems } from '@/hooks/useItems';
 
 const StoreDepartmentPage: React.FC = () => {
   const { department } = useParams<{ department: string }>();
-  // Mock items for demonstration
-  const items = [
-    { id: 1, name: 'Biology Textbook', added: '2025-07-01', description: 'Standard biology curriculum textbook', quantity: 50, supplier: 'Textbook Publishers Ltd.' },
-    { id: 2, name: 'Lab Microscope', added: '2025-06-15', description: 'Optical microscope for lab use', quantity: 10, supplier: 'Lab Equip Co.' },
-    { id: 3, name: 'Football', added: '2025-07-10', description: 'Official size football', quantity: 20, supplier: 'Sports Supplies Ltd.' },
-  ];
+  const { items, loading } = useItems();
+  
+  // Filter items by department if needed
+  const departmentItems = items.filter(item => 
+    item.store?.name?.toLowerCase().includes(department?.toLowerCase() || '')
+  );
 
   const [selectedItem, setSelectedItem] = React.useState<any | null>(null);
 
@@ -28,11 +29,11 @@ const StoreDepartmentPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {items.map(item => (
+            {departmentItems.map(item => (
               <tr key={item.id} className="border-b">
                 <td className="p-4 font-medium">{item.name}</td>
                 <td className="p-4">{item.quantity}</td>
-                <td className="p-4">{item.supplier}</td>
+                <td className="p-4">{item.store?.name || 'N/A'}</td>
                 <td className="p-4">
                   <button
                     className="px-3 py-1 bg-primary text-white rounded hover:bg-primary/80"
