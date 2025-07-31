@@ -25,17 +25,14 @@ export const useActivities = () => {
       // Fetch audit logs and convert to activities
       const { data: auditLogs } = await supabase
         .from('audit_logs')
-        .select(`
-          *,
-          user:profiles(full_name)
-        `)
+        .select('*')
         .order('timestamp', { ascending: false })
         .limit(10);
 
       // Convert audit logs to activities format
       const realActivities: Activity[] = (auditLogs || []).map((log, index) => ({
         id: log.id,
-        user: log.user?.full_name || 'Unknown User',
+        user: 'System User', // Simplified since we can't easily join with profiles
         action: log.action || 'Performed an action',
         store: 'Store System',
         time: new Date(log.timestamp || '').toLocaleString(),

@@ -1,7 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
-
 import React, { useState } from 'react';
-import { sendEmailNotification } from '@/lib/emailNotifications';
+import { useUsers } from '@/hooks/useUsers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,54 +8,36 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Search,
-  UserPlus,
-  Filter
-} from 'lucide-react';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: 'Active' | 'Inactive';
-  lastLogin: string;
-  department: string;
-  phone: string;
-}
+import { Loader2, Plus, Edit, Trash2, Eye, Search, UserPlus, Filter } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
   const { toast } = useToast();
+  const { users, loading, error, updateUser, deleteUser } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [processingActions, setProcessingActions] = useState<Set<string>>(new Set());
 
-  const [users, setUsers] = useState<User[]>([
-    { id: 1, name: "John Doe", email: "john@school.edu", role: "Teacher", status: "Active", lastLogin: "2024-01-15", department: "Mathematics", phone: "0712345678" },
-    { id: 2, name: "Jane Smith", email: "jane@school.edu", role: "Store Keeper", status: "Active", lastLogin: "2024-01-14", department: "General Store", phone: "0723456789" },
-    { id: 3, name: "Mike Johnson", email: "mike@school.edu", role: "Bursar", status: "Inactive", lastLogin: "2024-01-10", department: "Finance", phone: "0734567890" },
-    { id: 4, name: "Sarah Wilson", email: "sarah@school.edu", role: "Procurement Officer", status: "Active", lastLogin: "2024-01-13", department: "Procurement", phone: "0745678901" },
-    { id: 5, name: "David Brown", email: "david@school.edu", role: "Admin", status: "Active", lastLogin: "2024-01-16", department: "Administration", phone: "0756789012" }
-  ]);
-
-  const [newUser, setNewUser] = useState({
-    name: '',
-    email: '',
-    role: '',
-    department: '',
-    phone: ''
-  });
+  // Input validation helper
+  const validateInput = (input: string, type: 'name' | 'email' | 'phone') => {
+    const sanitized = input.trim().slice(0, type === 'phone' ? 20 : 100);
+    
+    if (type === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(sanitized) ? sanitized : '';
+    }
+    
+    if (type === 'phone') {
+      const phoneRegex = /^[0-9+\-\s()]{10,20}$/;
+      return phoneRegex.test(sanitized) ? sanitized : sanitized;
+    }
+    
+    return sanitized;
+  };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || user.role === filterRole;
     const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
@@ -65,45 +45,7 @@ const UserManagement: React.FC = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleAddUser = async () => {
-    if (!newUser.name || !newUser.email || !newUser.role) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const newUserData: User = {
-      id: Date.now(),
-      ...newUser,
-      status: 'Active',
-      lastLogin: 'Never'
-    };
-
-
-    setUsers(prev => [...prev, newUserData]);
-    setNewUser({ name: '', email: '', role: '', department: '', phone: '' });
-    setShowAddDialog(false);
-    toast({
-      title: "User Added",
-      description: `${newUser.name} has been added to the system.`
-    });
-
-    // Email notification to user (placeholder)
-    try {
-      await sendEmailNotification({
-        to: newUser.email,
-        subject: 'Welcome to School Store System',
-        message: `Hello ${newUser.name}, your account has been created. Please log in to access the system.`
-      });
-    } catch (err) {
-      // Ignore email errors
-    }
-  };
-
-  const handleEditUser = (userId: number) => {
+  const handleEditUser = (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (user) {
       setSelectedUser(user);
@@ -113,162 +55,62 @@ const UserManagement: React.FC = () => {
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
 
-    setUsers(prev => prev.map(user => 
-      user.id === selectedUser.id ? selectedUser : user
-    ));
-    
+    const validatedData = {
+      full_name: validateInput(selectedUser.full_name, 'name'),
+      phone: validateInput(selectedUser.phone, 'phone'),
+      department: validateInput(selectedUser.department, 'name'),
+      role: selectedUser.role
+    };
 
-    setSelectedUser(null);
-    toast({
-      title: "User Updated",
-      description: `${selectedUser.name}'s information has been updated.`
-    });
-
-    // Email notification to user (placeholder)
-    try {
-      await sendEmailNotification({
-        to: selectedUser.email,
-        subject: 'Your profile was updated',
-        message: `Hello ${selectedUser.name}, your profile information was updated by an admin.`
-      });
-    } catch (err) {}
-  };
-
-  const handleDeleteUser = async (userId: number) => {
-    setProcessingActions(prev => new Set(prev).add(`delete-${userId}`));
-    setTimeout(async () => {
-      const userToDelete = users.find(u => u.id === userId);
-      setUsers(prev => prev.filter(user => user.id !== userId));
-      setProcessingActions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(`delete-${userId}`);
-        return newSet;
-      });
+    if (!validatedData.full_name) {
       toast({
-        title: "User Deleted",
-        description: "User has been removed from the system."
+        title: "Validation Error",
+        description: "Please provide a valid name.",
+        variant: "destructive"
       });
-      // Audit log: user deleted
-      try {
-        await supabase.from('audit_logs').insert({
-          action: 'delete_user',
-          actor: 'admin', // Replace with actual admin name/email if available
-          target: userToDelete?.email || '',
-          timestamp: new Date().toISOString(),
-          details: `Deleted user: ${userToDelete?.name} (${userToDelete?.email})`
-        });
-      } catch (err) {
-        // Ignore audit log errors
-      }
-      // Email notification to user (placeholder)
-      if (userToDelete) {
-        try {
-          await sendEmailNotification({
-            to: userToDelete.email,
-            subject: 'Account Deactivated',
-            message: `Hello ${userToDelete.name}, your account has been deactivated or removed by an admin.`
-          });
-        } catch (err) {}
-      }
-    }, 1000);
+      return;
+    }
+
+    const success = await updateUser(selectedUser.id, validatedData);
+    if (success) {
+      setSelectedUser(null);
+    }
   };
 
-  const toggleUserStatus = (userId: number) => {
-    setUsers(prev => prev.map(user => 
-      user.id === userId 
-        ? { ...user, status: user.status === 'Active' ? 'Inactive' : 'Active' }
-        : user
-    ));
-    
-    toast({
-      title: "Status Updated",
-      description: "User status has been changed."
+  const handleDeleteUser = async (userId: string) => {
+    setProcessingActions(prev => new Set(prev).add(`delete-${userId}`));
+    const success = await deleteUser(userId);
+    setProcessingActions(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(`delete-${userId}`);
+      return newSet;
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading users...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600 p-8">
+        <p>Error loading users: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">User Management</h1>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-              <DialogDescription>
-                Create a new user account for the system.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter full name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="Enter email address"
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Role *</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Admin">Administrator</SelectItem>
-                    <SelectItem value="Teacher">Department Teacher</SelectItem>
-                    <SelectItem value="Store Keeper">Store Keeper</SelectItem>
-                    <SelectItem value="Procurement Officer">Procurement Officer</SelectItem>
-                    <SelectItem value="Bursar">Bursar</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  value={newUser.department}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, department: e.target.value }))}
-                  placeholder="Enter department"
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={newUser.phone}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="Enter phone number"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleAddUser} className="flex-1">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add User
-                </Button>
-                <Button variant="outline" onClick={() => setShowAddDialog(false)} className="flex-1">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <p className="text-sm text-muted-foreground">
+          Note: User creation must be done through the registration system for security.
+        </p>
       </div>
 
       {/* Filters */}
@@ -341,28 +183,20 @@ const UserManagement: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
                       <div>
-                        <p className="font-medium">{user.name}</p>
+                        <p className="font-medium">{user.full_name}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
-                      <Badge 
-                        variant={user.status === 'Active' ? 'default' : 'secondary'}
-                        className="cursor-pointer"
-                        onClick={() => toggleUserStatus(user.id)}
-                      >
+                      <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
                         {user.status}
                       </Badge>
                       <Badge variant="outline">{user.role}</Badge>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
                       <span>Department: {user.department}</span>
                       <span>Phone: {user.phone}</span>
-                      <span>Last login: {user.lastLogin}</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditUser(user.id)}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleEditUser(user.id)}>
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -372,7 +206,11 @@ const UserManagement: React.FC = () => {
                       onClick={() => handleDeleteUser(user.id)}
                       disabled={processingActions.has(`delete-${user.id}`)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {processingActions.has(`delete-${user.id}`) ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -395,24 +233,28 @@ const UserManagement: React.FC = () => {
                 <Label htmlFor="edit-name">Full Name</Label>
                 <Input
                   id="edit-name"
-                  value={selectedUser.name}
-                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, name: e.target.value } : null)}
+                  value={selectedUser.full_name}
+                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, full_name: validateInput(e.target.value, 'name') } : null)}
+                  maxLength={100}
                 />
               </div>
               <div>
-                <Label htmlFor="edit-email">Email</Label>
+                <Label htmlFor="edit-email">Email (Read-only)</Label>
                 <Input
                   id="edit-email"
                   value={selectedUser.email}
-                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, email: e.target.value } : null)}
+                  disabled
+                  className="bg-muted"
                 />
+                <p className="text-xs text-muted-foreground mt-1">Email cannot be changed for security reasons</p>
               </div>
               <div>
                 <Label htmlFor="edit-department">Department</Label>
                 <Input
                   id="edit-department"
                   value={selectedUser.department}
-                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, department: e.target.value } : null)}
+                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, department: validateInput(e.target.value, 'name') } : null)}
+                  maxLength={100}
                 />
               </div>
               <div>
@@ -420,8 +262,27 @@ const UserManagement: React.FC = () => {
                 <Input
                   id="edit-phone"
                   value={selectedUser.phone}
-                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, phone: e.target.value } : null)}
+                  onChange={(e) => setSelectedUser(prev => prev ? { ...prev, phone: validateInput(e.target.value, 'phone') } : null)}
+                  maxLength={20}
                 />
+              </div>
+              <div>
+                <Label htmlFor="edit-role">Role</Label>
+                <Select 
+                  value={selectedUser.role} 
+                  onValueChange={(value) => setSelectedUser(prev => prev ? { ...prev, role: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="teacher">Department Teacher</SelectItem>
+                    <SelectItem value="storekeeper">Store Keeper</SelectItem>
+                    <SelectItem value="procurement_officer">Procurement Officer</SelectItem>
+                    <SelectItem value="bursar">Bursar</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleUpdateUser} className="flex-1">

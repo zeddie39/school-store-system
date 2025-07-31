@@ -4,12 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuditLogEntry {
-  id: number;
+  id: string;
   action: string;
-  actor: string;
-  target: string;
+  user_id: string;
   timestamp: string;
-  details?: string;
 }
 
 const AuditLog: React.FC = () => {
@@ -39,20 +37,16 @@ const AuditLog: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Action</TableHead>
-                <TableHead>Actor</TableHead>
-                <TableHead>Target</TableHead>
+                <TableHead>User ID</TableHead>
                 <TableHead>Time</TableHead>
-                <TableHead>Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {logs.map(log => (
                 <TableRow key={log.id}>
                   <TableCell>{log.action}</TableCell>
-                  <TableCell>{log.actor}</TableCell>
-                  <TableCell>{log.target}</TableCell>
+                  <TableCell>{log.user_id}</TableCell>
                   <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                  <TableCell>{log.details || '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
