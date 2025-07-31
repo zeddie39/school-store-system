@@ -111,7 +111,7 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
     <>
       <nav className="bg-sidebar border-b border-sidebar-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-16 flex-wrap sm:flex-nowrap gap-2">
             {/* Logo and Brand */}
             <div className="flex items-center gap-3">
               <div className="p-2 bg-sidebar-primary/10 rounded-lg">
@@ -125,7 +125,7 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
             </div>
 
             {/* Navigation Items */}
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 lg:gap-4 flex-wrap">
               {getNavItems().map((item, index) => (
                 <Button
                   key={index}
@@ -134,16 +134,16 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
                   className="text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent"
                   onClick={() => handleNavigation(item)}
                 >
-                  <item.icon className="w-4 h-4 mr-2" />
-                  {item.label}
+                  <item.icon className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden lg:inline">{item.label}</span>
                 </Button>
               ))}
             </div>
 
             {/* User Info, Profile Edit, and Logout */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="text-right">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="text-right hidden sm:block">
                   <p className="text-sm font-medium text-sidebar-foreground">
                     {userProfile.full_name}
                   </p>
@@ -158,7 +158,7 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
                   title="Edit Profile"
                   onClick={() => setProfileDialogOpen(true)}
                 >
-                  <User className="w-5 h-5 text-sidebar-foreground" />
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-sidebar-foreground" />
                 </Button>
               </div>
               <Button
@@ -167,8 +167,8 @@ const Navigation: React.FC<NavigationProps> = ({ userRole, userEmail, userProfil
                 onClick={onLogout}
                 className="text-sidebar-foreground hover:text-destructive"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <LogOut className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>

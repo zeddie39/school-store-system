@@ -20,12 +20,21 @@ import { useStats } from '@/hooks/useStats';
 import { useActivities } from '@/hooks/useActivities';
 import { useReports } from '@/hooks/useReports';
 import { supabase } from '@/integrations/supabase/client';
+import AssetDetailsDialog from '../assets/AssetDetailsDialog';
+import DepartmentPasswordDialog from '../auth/DepartmentPasswordDialog';
+import BackButton from '../common/BackButton';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { stats, loading: statsLoading, formatCurrency } = useStats();
   const { activities, loading: activitiesLoading } = useActivities();
   const { reports, loading: reportsLoading } = useReports();
+  
+  // Dialog states
+  const [assetDetailsDialog, setAssetDetailsDialog] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [departmentPasswordDialog, setDepartmentPasswordDialog] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
 
   // Calculate dynamic stats from real data
   const dashboardStats = [
@@ -105,23 +114,38 @@ const AdminDashboard: React.FC = () => {
     fetchDepartments();
   }, []);
 
-  // Handle department selection: navigate to department page
-  const handleDepartmentSelect = (deptId: string) => {
+  // Handle department selection with password protection
+  const handleDepartmentSelect = (deptId: string, deptName: string) => {
     setSelectedDept(deptId);
+    setSelectedDepartment(deptName);
     if (deptId) {
-      navigate(`/departments/${deptId}`);
+      setDepartmentPasswordDialog(true);
     }
   };
 
+  const handleDepartmentAccess = () => {
+    if (selectedDept) {
+      navigate(`/departments/${selectedDept}`);
+    }
+  };
+
+  const handleAssetClick = (asset: any) => {
+    setSelectedAsset(asset);
+    setAssetDetailsDialog(true);
+  };
+
   return (
-    <div className="space-y-8 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to the administrative control panel</p>
+    <div className="space-y-8 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Welcome to the administrative control panel</p>
+        </div>
+        <BackButton to="/" label="Home" />
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {dashboardStats.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}
@@ -142,17 +166,27 @@ const AdminDashboard: React.FC = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-primary/10 font-semibold">
-                  <th className="p-4 text-left">Asset</th>
-                  <th className="p-4 text-left">Value</th>
-                  <th className="p-4 text-left">Count</th>
+                  <th className="p-3 sm:p-4 text-left">Asset</th>
+                  <th className="p-3 sm:p-4 text-left">Value</th>
+                  <th className="p-3 sm:p-4 text-left">Count</th>
+                  <th className="p-3 sm:p-4 text-left">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {assetValuation.assets.map((asset, idx) => (
-                  <tr key={idx} className="border-b">
-                    <td className="p-4 font-medium">{asset.name}</td>
-                    <td className="p-4">{asset.value}</td>
-                    <td className="p-4">{asset.count}</td>
+                  <tr key={idx} className="border-b hover:bg-muted/30 transition-colors">
+                    <td className="p-3 sm:p-4 font-medium">{asset.name}</td>
+                    <td className="p-3 sm:p-4">{asset.value}</td>
+                    <td className="p-3 sm:p-4">{asset.count}</td>
+                    <td className="p-3 sm:p-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAssetClick(asset)}
+                      >
+                        View Details
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -178,12 +212,16 @@ const AdminDashboard: React.FC = () => {
             ) : departments.length === 0 ? (
               <span className="text-muted-foreground">No departments found.</span>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {departments.map((dept) => (
-                  <div key={dept.value} className="flex items-center gap-2">
+                  <div key={dept.value} className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
                     <span className="font-medium">{dept.label}</span>
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/departments/${dept.value}`)}>
-                      View/Edit
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleDepartmentSelect(dept.value, dept.label)}
+                    >
+                      Access
                     </Button>
                   </div>
                 ))}
@@ -262,6 +300,20 @@ const AdminDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <AssetDetailsDialog
+        open={assetDetailsDialog}
+        onOpenChange={setAssetDetailsDialog}
+        asset={selectedAsset}
+      />
+
+      <DepartmentPasswordDialog
+        open={departmentPasswordDialog}
+        onOpenChange={setDepartmentPasswordDialog}
+        departmentName={selectedDepartment}
+        onSuccess={handleDepartmentAccess}
+      />
     </div>
   );
 };

@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import AddItemDialog from '../items/AddItemDialog';
 import StoreItemsDialog from './StoreItemsDialog';
 import StoreManagementDialog from './StoreManagementDialog';
+import ItemOperationDialog from '../inventory/ItemOperationDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 interface StoreGridProps {
@@ -43,6 +44,9 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
   const [selectedStoreForView, setSelectedStoreForView] = useState<Store | null>(null);
   const [manageStoreDialogOpen, setManageStoreDialogOpen] = useState(false);
   const [selectedStoreForManage, setSelectedStoreForManage] = useState<Store | null>(null);
+  const [operationDialogOpen, setOperationDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [operation, setOperation] = useState<'purchase' | 'issue' | null>(null);
 
   const getStoreIcon = (storeType: string) => {
     switch (storeType) {
@@ -102,9 +106,22 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
   const handleAddItem = (store: Store) => {
     setSelectedStoreForAdd(store);
     setAddItemDialogOpen(true);
+    
+    // Show operation dialog for demonstration
+    const demoItem = {
+      name: 'Sample Item',
+      quantity: 50,
+      unit: 'pieces',
+      store: store.name
+    };
+    
+    setSelectedItem(demoItem);
+    setOperation('purchase');
+    setOperationDialogOpen(true);
+    
     toast({
       title: "Add Item",
-      description: `Adding new item to ${store.name}...`,
+      description: `Choose purchase or issue for ${store.name}`,
     });
   };
 
@@ -153,7 +170,7 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {stores.map((store) => {
           const IconComponent = getStoreIcon(store.store_type);
           const itemCount = getItemCount(store.id);
@@ -185,7 +202,7 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
                   {store.description || 'No description available'}
                 </p>
                 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-muted-foreground">Items:</span>
                     <span className="font-medium ml-2">{itemCount}</span>
@@ -212,7 +229,7 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
                   Created: {new Date(store.created_at || '').toLocaleDateString()}
                 </div>
                 
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -266,6 +283,13 @@ const StoreGrid: React.FC<StoreGridProps> = ({ userRole }) => {
         open={manageStoreDialogOpen}
         onOpenChange={setManageStoreDialogOpen}
         store={selectedStoreForManage}
+      />
+
+      <ItemOperationDialog
+        open={operationDialogOpen}
+        onOpenChange={setOperationDialogOpen}
+        item={selectedItem}
+        operation={operation}
       />
     </>
   );

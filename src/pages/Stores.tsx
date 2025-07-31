@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Store, ArrowRight } from 'lucide-react';
 import { useStores } from '@/hooks/useStores';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
+import DepartmentPasswordDialog from '@/components/auth/DepartmentPasswordDialog';
+import BackButton from '@/components/common/BackButton';
 
 // Simulated reports per department
 const departmentReports = [
@@ -64,32 +66,50 @@ const departmentReports = [
 export function DepartmentDropdownNav({ stores }: { stores: any[] }) {
   const navigate = useNavigate();
   const [selected, setSelected] = React.useState('');
-  React.useEffect(() => {
+  const [passwordDialog, setPasswordDialog] = React.useState(false);
+  const [selectedDept, setSelectedDept] = React.useState('');
+  
+  const handleDepartmentSelect = (value: string) => {
+    setSelected(value);
+    setSelectedDept(value);
+    setPasswordDialog(true);
+  };
+
+  const handlePasswordSuccess = () => {
     if (selected) {
       navigate(`/stores/${selected}`);
     }
-  }, [selected, navigate]);
+  };
   return (
-    <div className="max-w-xs">
-      <label className="block mb-2 font-medium">Department</label>
-      <select
-        className="w-full border rounded px-3 py-2"
-        value={selected}
-        onChange={e => setSelected(e.target.value)}
-      >
-        <option value="">Select department...</option>
-        {stores.map((store: any) => {
-          // Ensure value matches department keys in departmentReports
-          let value = store.store_type;
-          if (value === 'ict') value = 'ict_lab';
-          return (
-            <option key={store.id} value={value}>
-              {store.name} ({value.replace('_', ' ')})
-            </option>
-          );
-        })}
-      </select>
-    </div>
+    <>
+      <div className="max-w-xs">
+        <label className="block mb-2 font-medium">Department</label>
+        <select
+          className="w-full border rounded px-3 py-2"
+          value=""
+          onChange={e => handleDepartmentSelect(e.target.value)}
+        >
+          <option value="">Select department...</option>
+          {stores.map((store: any) => {
+            // Ensure value matches department keys in departmentReports
+            let value = store.store_type;
+            if (value === 'ict') value = 'ict_lab';
+            return (
+              <option key={store.id} value={value}>
+                {store.name} ({value.replace('_', ' ')})
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      
+      <DepartmentPasswordDialog
+        open={passwordDialog}
+        onOpenChange={setPasswordDialog}
+        departmentName={selectedDept}
+        onSuccess={handlePasswordSuccess}
+      />
+    </>
   );
 }
 
@@ -135,8 +155,8 @@ const DepartmentReports: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Button variant="outline" onClick={() => navigate('/stores')} className="mb-4">&larr; Back to Departments</Button>
+    <div className="space-y-6 p-4 sm:p-6">
+      <BackButton to="/stores" label="Back to Departments" className="mb-4" />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -193,19 +213,23 @@ const DepartmentReports: React.FC = () => {
 const StoresPage: React.FC = () => {
   const { stores } = useStores();
   return (
-    <Routes>
+        <Routes>
       <Route
         path="/"
         element={
-          <div className="space-y-6">
+          <div className="space-y-6 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl sm:text-3xl font-bold">Department Reports</h1>
+              <BackButton to="/" label="Dashboard" />
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Store className="w-5 h-5" />
-                  Department Reports
+                  Department Access
                 </CardTitle>
                 <CardDescription>
-                  Select a department from the dropdown to view and download its reports
+                  Select a department from the dropdown to access its reports (password required)
                 </CardDescription>
               </CardHeader>
               <CardContent>

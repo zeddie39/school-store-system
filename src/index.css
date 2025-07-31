@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Responsive design improvements */
+.store-card {
+  @apply transition-all duration-200 hover:shadow-lg;
+}
+
+/* Role badge styles */
+.role-badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.role-badge-admin {
+  @apply bg-destructive/10 text-destructive;
+}
+
+.role-badge-storekeeper {
+  @apply bg-primary/10 text-primary;
+}
+
+.role-badge-teacher {
+  @apply bg-success/10 text-success;
+}
+
+.role-badge-procurement {
+  @apply bg-warning/10 text-warning;
+}
+
+.role-badge-bursar {
+  @apply bg-muted text-muted-foreground;
+}
+
 /* School Store Management System Design System */
 
 @layer base {
