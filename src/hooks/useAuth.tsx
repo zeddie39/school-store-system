@@ -58,6 +58,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error('❌ Error creating profile:', error);
+        if (error.code === '23505') {
+          // Profile already exists, try to fetch it
+          const { data: existingProfile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (!fetchError && existingProfile) {
+            console.log('✅ Found existing profile:', existingProfile);
+            setProfile(existingProfile);
+            setProfileError(null);
+            return;
+          }
+        }
         setProfileError('Failed to create user profile');
       } else {
         console.log('✅ Profile created successfully:', data);
@@ -106,14 +121,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setProfileError('Error fetching user profile');
                 setProfile(null);
               } else if (!profile) {
-                console.log('⚠️ No profile found, user needs profile creation');
-                setProfileError('Profile not found - please contact administrator');
+                console.log('⚠️ No profile found, attempting auto-creation');
+                setProfileError(null);
                 setProfile(null);
                 
-                // Attempt to create profile from user metadata
-                if (session.user.user_metadata) {
-                  await createProfile(session.user.user_metadata);
-                }
+                // Attempt to create profile from user metadata or defaults
+                const profileData = {
+                  full_name: session.user.user_metadata?.full_name || 'New User',
+                  role: session.user.user_metadata?.role || 'storekeeper',
+                  phone: session.user.user_metadata?.phone || '',
+                  department: session.user.user_metadata?.department || ''
+                };
+                
+                await createProfile(profileData);
               } else {
                 console.log('✅ Profile fetched successfully:', profile);
                 setProfile(profile);
@@ -156,14 +176,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setProfileError('Error fetching user profile');
               setProfile(null);
             } else if (!profile) {
-              console.log('⚠️ No existing profile found');
-              setProfileError('Profile not found - please contact administrator');
+              console.log('⚠️ No existing profile found, attempting auto-creation');
+              setProfileError(null);
               setProfile(null);
               
-              // Attempt to create profile from user metadata
-              if (session.user.user_metadata) {
-                createProfile(session.user.user_metadata);
-              }
+              // Attempt to create profile from user metadata or defaults
+              const profileData = {
+                full_name: session.user.user_metadata?.full_name || 'New User',
+                role: session.user.user_metadata?.role || 'storekeeper',
+                phone: session.user.user_metadata?.phone || '',
+                department: session.user.user_metadata?.department || ''
+              };
+              
+              createProfile(profileData);
             } else {
               console.log('✅ Existing profile fetched:', profile);
               setProfile(profile);
