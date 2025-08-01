@@ -7,50 +7,58 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, DollarSign, Package, User, MapPin, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, DollarSign, Package, User, MapPin, Clock, Edit2 } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+
+type Asset = Database['public']['Tables']['assets']['Row'];
 
 interface AssetDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  asset: {
-    name: string;
-    value: string;
-    count: number;
-  } | null;
+  asset: Asset | null;
+  onEdit?: (asset: Asset) => void;
 }
 
 const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
   open,
   onOpenChange,
-  asset
+  asset,
+  onEdit
 }) => {
   if (!asset) return null;
 
-  // Generate mock detailed data for the asset
-  const generateAssetDetails = (assetName: string) => {
-    const baseDate = new Date();
-    const purchaseDate = new Date(baseDate.getTime() - Math.random() * 365 * 24 * 60 * 60 * 1000);
-    
-    const suppliers = ['SchoolSupply Co.', 'EduEquip Ltd.', 'Campus Supplies', 'Academic Resources Inc.', 'Learning Materials Ltd.'];
-    const locations = ['Main Store', 'Department A', 'Department B', 'Storage Room 1', 'Storage Room 2'];
-    const conditions = ['Excellent', 'Good', 'Fair', 'Needs Maintenance'];
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-KE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getDepreciationInfo = () => {
+    const purchaseDate = new Date(asset.purchase_date);
+    const today = new Date();
+    const yearsOwned = (today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+    const totalDepreciation = asset.purchase_price - asset.current_value;
+    const depreciationPercentage = (totalDepreciation / asset.purchase_price) * 100;
     
     return {
-      purchaseDate: purchaseDate.toLocaleDateString(),
-      supplier: suppliers[Math.floor(Math.random() * suppliers.length)],
-      location: locations[Math.floor(Math.random() * locations.length)],
-      condition: conditions[Math.floor(Math.random() * conditions.length)],
-      unitPrice: Math.floor(Math.random() * 5000) + 500,
-      warranty: Math.floor(Math.random() * 36) + 12, // 12-48 months
-      lastMaintenance: new Date(baseDate.getTime() - Math.random() * 90 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      purchaseOrder: `PO-${Math.floor(Math.random() * 90000) + 10000}`,
-      serialNumbers: Array.from({ length: Math.min(asset.count, 3) }, () => 
-        `SN${Math.floor(Math.random() * 900000) + 100000}`
-      )
+      yearsOwned: yearsOwned.toFixed(1),
+      totalDepreciation: formatCurrency(totalDepreciation),
+      depreciationPercentage: depreciationPercentage.toFixed(1)
     };
   };
 
-  const details = generateAssetDetails(asset.name);
+  const depreciationInfo = getDepreciationInfo();
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
@@ -66,13 +74,28 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5 text-primary" />
-            {asset.name} Details
-          </DialogTitle>
-          <DialogDescription>
-            Comprehensive information about this asset category
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                {asset.name}
+              </DialogTitle>
+              <DialogDescription>
+                {asset.category.charAt(0).toUpperCase() + asset.category.slice(1)} Asset Details
+              </DialogDescription>
+            </div>
+            {onEdit && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onEdit(asset)}
+                className="ml-4"
+              >
+                <Edit2 className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )}
+          </div>
         </DialogHeader>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -82,25 +105,47 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
               <h3 className="font-semibold text-primary mb-3">Asset Overview</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Purchase Price:</span>
+                  <span className="font-semibold text-primary">{formatCurrency(asset.purchase_price)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Current Value:</span>
+                  <span className="font-semibold text-success">{formatCurrency(asset.current_value)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Quantity:</span>
+                  <span className="font-semibold">{asset.quantity} items</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Value:</span>
-                  <span className="font-semibold text-primary">{asset.value}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Count:</span>
-                  <span className="font-semibold">{asset.count} items</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Avg. Unit Price:</span>
-                  <span className="font-semibold">KSH {details.unitPrice.toLocaleString()}</span>
+                  <span className="font-semibold">{formatCurrency(asset.current_value * asset.quantity)}</span>
                 </div>
               </div>
             </div>
 
             <div className="p-4 bg-muted/30 rounded-lg">
               <h3 className="font-semibold mb-3">Condition Status</h3>
-              <Badge className={getConditionColor(details.condition)}>
-                {details.condition}
+              <Badge className={getConditionColor(asset.condition || 'good')}>
+                {asset.condition || 'Good'}
               </Badge>
+            </div>
+
+            <div className="p-4 bg-warning/5 rounded-lg border border-warning/10">
+              <h3 className="font-semibold text-warning mb-3">Depreciation Info</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Years Owned:</span>
+                  <span className="font-medium">{depreciationInfo.yearsOwned} years</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Depreciation:</span>
+                  <span className="font-medium text-destructive">{depreciationInfo.totalDepreciation}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Depreciation %:</span>
+                  <span className="font-medium">{depreciationInfo.depreciationPercentage}%</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -113,91 +158,95 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm">
                     <span className="text-muted-foreground">Purchased:</span>
-                    <span className="font-medium ml-2">{details.purchaseDate}</span>
+                    <span className="font-medium ml-2">{formatDate(asset.purchase_date)}</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Supplier:</span>
-                    <span className="font-medium ml-2">{details.supplier}</span>
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">PO Number:</span>
-                    <span className="font-medium ml-2">{details.purchaseOrder}</span>
-                  </span>
-                </div>
+                {asset.supplier && (
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Supplier:</span>
+                      <span className="font-medium ml-2">{asset.supplier}</span>
+                    </span>
+                  </div>
+                )}
+                {asset.purchase_order_number && (
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">PO Number:</span>
+                      <span className="font-medium ml-2">{asset.purchase_order_number}</span>
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="p-4 bg-warning/5 rounded-lg border border-warning/10">
-              <h3 className="font-semibold text-warning mb-3">Location & Maintenance</h3>
+              <h3 className="font-semibold text-warning mb-3">Location & Details</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Location:</span>
-                    <span className="font-medium ml-2">{details.location}</span>
-                  </span>
-                </div>
+                {asset.location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Location:</span>
+                      <span className="font-medium ml-2">{asset.location}</span>
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm">
-                    <span className="text-muted-foreground">Last Maintenance:</span>
-                    <span className="font-medium ml-2">{details.lastMaintenance}</span>
+                    <span className="text-muted-foreground">Last Valuation:</span>
+                    <span className="font-medium ml-2">{formatDate(asset.last_valuation_date || asset.created_at)}</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Warranty:</span>
-                    <span className="font-medium ml-2">{details.warranty} months</span>
-                  </span>
-                </div>
+                {asset.warranty_expiry && (
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Warranty Expires:</span>
+                      <span className="font-medium ml-2">{formatDate(asset.warranty_expiry)}</span>
+                    </span>
+                  </div>
+                )}
+                {asset.serial_number && (
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Serial Number:</span>
+                      <span className="font-medium ml-2">{asset.serial_number}</span>
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Serial Numbers (if applicable) */}
-        {details.serialNumbers.length > 0 && (
+        {/* Asset Description */}
+        {asset.description && (
           <div className="mt-6 p-4 bg-muted/20 rounded-lg">
-            <h3 className="font-semibold mb-3">Recent Serial Numbers</h3>
-            <div className="flex flex-wrap gap-2">
-              {details.serialNumbers.map((serial, index) => (
-                <Badge key={index} variant="outline" className="font-mono">
-                  {serial}
-                </Badge>
-              ))}
-              {asset.count > 3 && (
-                <Badge variant="secondary">
-                  +{asset.count - 3} more items
-                </Badge>
-              )}
-            </div>
+            <h3 className="font-semibold mb-3">Description</h3>
+            <p className="text-sm text-muted-foreground">{asset.description}</p>
           </div>
         )}
 
-        {/* Recent Transactions */}
+        {/* Asset History */}
         <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/10">
-          <h3 className="font-semibold text-primary mb-3">Recent Transaction History</h3>
+          <h3 className="font-semibold text-primary mb-3">Asset History</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b border-primary/10">
-              <span>Purchase Order {details.purchaseOrder}</span>
-              <span className="text-success">+{asset.count} items</span>
+              <span>Asset Created</span>
+              <span className="text-muted-foreground">{formatDate(asset.created_at)}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-primary/10">
-              <span>Inventory Check - {details.lastMaintenance}</span>
-              <span className="text-muted-foreground">Verified</span>
+              <span>Last Updated</span>
+              <span className="text-muted-foreground">{formatDate(asset.updated_at)}</span>
             </div>
             <div className="flex justify-between py-2">
-              <span>Condition Assessment</span>
-              <Badge className={getConditionColor(details.condition)} variant="outline">
-                {details.condition}
-              </Badge>
+              <span>Depreciation Rate</span>
+              <span className="text-muted-foreground">{asset.depreciation_rate || 'Auto'}%</span>
             </div>
           </div>
         </div>

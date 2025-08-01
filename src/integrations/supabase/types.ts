@@ -56,6 +56,72 @@ export type Database = {
           },
         ]
       }
+      assets: {
+        Row: {
+          added_by: string | null
+          category: string
+          condition: string | null
+          created_at: string
+          current_value: number
+          depreciation_rate: number | null
+          description: string | null
+          id: string
+          last_valuation_date: string | null
+          location: string | null
+          name: string
+          purchase_date: string
+          purchase_order_number: string | null
+          purchase_price: number
+          quantity: number
+          serial_number: string | null
+          supplier: string | null
+          updated_at: string
+          warranty_expiry: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          category: string
+          condition?: string | null
+          created_at?: string
+          current_value: number
+          depreciation_rate?: number | null
+          description?: string | null
+          id?: string
+          last_valuation_date?: string | null
+          location?: string | null
+          name: string
+          purchase_date: string
+          purchase_order_number?: string | null
+          purchase_price: number
+          quantity?: number
+          serial_number?: string | null
+          supplier?: string | null
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          category?: string
+          condition?: string | null
+          created_at?: string
+          current_value?: number
+          depreciation_rate?: number | null
+          description?: string | null
+          id?: string
+          last_valuation_date?: string | null
+          location?: string | null
+          name?: string
+          purchase_date?: string
+          purchase_order_number?: string | null
+          purchase_price?: number
+          quantity?: number
+          serial_number?: string | null
+          supplier?: string | null
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string | null
@@ -74,6 +140,30 @@ export type Database = {
           id?: string
           timestamp?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      department_passwords: {
+        Row: {
+          created_at: string
+          department_name: string
+          id: string
+          password_hash: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_name: string
+          id?: string
+          password_hash: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_name?: string
+          id?: string
+          password_hash?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -446,6 +536,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_asset_value: {
+        Args: {
+          purchase_price: number
+          purchase_date: string
+          depreciation_rate: number
+          category: string
+        }
+        Returns: number
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]

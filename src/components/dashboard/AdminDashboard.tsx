@@ -20,7 +20,7 @@ import { useStats } from '@/hooks/useStats';
 import { useActivities } from '@/hooks/useActivities';
 import { useReports } from '@/hooks/useReports';
 import { supabase } from '@/integrations/supabase/client';
-import AssetDetailsDialog from '../assets/AssetDetailsDialog';
+import AssetValuation from '../assets/AssetValuation';
 import DepartmentPasswordDialog from '../auth/DepartmentPasswordDialog';
 import BackButton from '../common/BackButton';
 
@@ -301,12 +301,8 @@ const AdminDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
-      <AssetDetailsDialog
-        open={assetDetailsDialog}
-        onOpenChange={setAssetDetailsDialog}
-        asset={selectedAsset}
-      />
+      {/* Asset Valuation */}
+      <AssetValuation />
 
       <DepartmentPasswordDialog
         open={departmentPasswordDialog}

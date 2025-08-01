@@ -22,9 +22,12 @@ interface ItemOperationDialogProps {
     name: string;
     quantity: number;
     unit: string;
-    store: string;
+    store?: {
+      name: string;
+      store_type: string;
+    } | string;
   } | null;
-  operation: 'purchase' | 'issue' | null;
+  operation?: 'purchase' | 'issue' | null;
 }
 
 const ItemOperationDialog: React.FC<ItemOperationDialogProps> = ({
@@ -90,7 +93,7 @@ const ItemOperationDialog: React.FC<ItemOperationDialogProps> = ({
             {operationTitle}
           </DialogTitle>
           <DialogDescription>
-            {operationDescription} for {item.name} in {item.store}
+            {operationDescription} for {item.name}
           </DialogDescription>
         </DialogHeader>
 
@@ -111,7 +114,7 @@ const ItemOperationDialog: React.FC<ItemOperationDialogProps> = ({
             </div>
             <div>
               <span className="text-muted-foreground">Store:</span>
-              <span className="font-medium ml-2">{item.store}</span>
+              <span className="font-medium ml-2">{typeof item.store === 'string' ? item.store : item.store?.name || 'Unknown'}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Date:</span>
@@ -256,7 +259,7 @@ const ItemOperationDialog: React.FC<ItemOperationDialogProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
-                <span>Store: {item.store}</span>
+                <span>Store: {typeof item.store === 'string' ? item.store : item.store?.name || 'Unknown'}</span>
               </div>
               {operation === 'purchase' && supplier && (
                 <div className="flex items-center gap-2">
