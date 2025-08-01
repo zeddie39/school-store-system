@@ -36,7 +36,15 @@ const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
     condition: 'good',
     warranty_expiry: '',
     serial_number: '',
-    depreciation_rate: 0
+    depreciation_rate: 0,
+    value_type: 'depreciation',
+    decline_type: '',
+    classification: 'Class I',
+    rep_person: '',
+    income_tax_applicable: false,
+    pfma_compliant: true,
+    ias_ifrs_standard: 'IAS 16',
+    valuation_standard: 'Kenya Asset Valuation Act 2023'
   });
 
   const categories = [
@@ -89,7 +97,15 @@ const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
         condition: 'good',
         warranty_expiry: '',
         serial_number: '',
-        depreciation_rate: 0
+        depreciation_rate: 0,
+        value_type: 'depreciation',
+        decline_type: '',
+        classification: 'Class I',
+        rep_person: '',
+        income_tax_applicable: false,
+        pfma_compliant: true,
+        ias_ifrs_standard: 'IAS 16',
+        valuation_standard: 'Kenya Asset Valuation Act 2023'
       });
       
       onOpenChange(false);
@@ -266,19 +282,82 @@ const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
               />
             </div>
 
+          <div>
+            <Label htmlFor="value_type">Value Type</Label>
+            <Select 
+              value={formData.value_type} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, value_type: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="depreciation">Depreciation</SelectItem>
+                <SelectItem value="appreciation">Appreciation</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {formData.value_type === 'depreciation' && (
             <div>
-              <Label htmlFor="depreciation_rate">Custom Depreciation Rate (%)</Label>
-              <Input
-                id="depreciation_rate"
-                type="number"
-                step="0.01"
-                value={formData.depreciation_rate}
-                onChange={(e) => setFormData(prev => ({ ...prev, depreciation_rate: parseFloat(e.target.value) || 0 }))}
-                min="0"
-                max="100"
-                placeholder="Leave 0 for auto calculation"
-              />
+              <Label htmlFor="decline_type">Decline Type</Label>
+              <Select 
+                value={formData.decline_type} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, decline_type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select decline type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="industrial_building_decline">Industrial Building Decline</SelectItem>
+                  <SelectItem value="investment_decline">Investment Decline</SelectItem>
+                  <SelectItem value="wear_and_tear">Wear and Tear</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          )}
+
+          <div>
+            <Label htmlFor="classification">Classification</Label>
+            <Select 
+              value={formData.classification} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, classification: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Class I">Class I</SelectItem>
+                <SelectItem value="Class II">Class II</SelectItem>
+                <SelectItem value="Class III">Class III</SelectItem>
+                <SelectItem value="Class IV">Class IV</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="rep_person">Rep/Responsible Person</Label>
+            <Input
+              id="rep_person"
+              value={formData.rep_person}
+              onChange={(e) => setFormData(prev => ({ ...prev, rep_person: e.target.value }))}
+              placeholder="Responsible person or repair cycle"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="depreciation_rate">Custom Depreciation Rate (%)</Label>
+            <Input
+              id="depreciation_rate"
+              type="number"
+              step="0.01"
+              value={formData.depreciation_rate}
+              onChange={(e) => setFormData(prev => ({ ...prev, depreciation_rate: parseFloat(e.target.value) || 0 }))}
+              min="0"
+              max="100"
+              placeholder="Leave 0 for Kenya standards auto calculation"
+            />
+          </div>
           </div>
 
           <div className="bg-muted/50 p-4 rounded-lg">

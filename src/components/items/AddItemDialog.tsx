@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useItems } from '@/hooks/useItems';
 import { useStores } from '@/hooks/useStores';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
@@ -28,6 +29,7 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
 }) => {
   const { createItem } = useItems();
   const { stores } = useStores();
+  const { suppliers } = useSuppliers();
   const { profile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +39,8 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
     quantity: 0,
     unit: 'pieces',
     minimum_stock: 10,
-    store_id: selectedStore?.id || ''
+    store_id: selectedStore?.id || '',
+    supplier_id: ''
   });
 
   // Update store_id when selectedStore changes
@@ -78,7 +81,8 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
         quantity: 0,
         unit: 'pieces',
         minimum_stock: 10,
-        store_id: selectedStore?.id || ''
+        store_id: selectedStore?.id || '',
+        supplier_id: ''
       });
       
       onOpenChange(false);
@@ -193,6 +197,28 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
               </Select>
             </div>
           )}
+
+          <div>
+            <Label htmlFor="supplier_id">Preferred Supplier</Label>
+            <Select 
+              value={formData.supplier_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, supplier_id: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a supplier (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map(supplier => (
+                  <SelectItem key={supplier.id} value={supplier.id}>
+                    {supplier.name} - {supplier.category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              You can send procurement requests to this supplier via WhatsApp
+            </p>
+          </div>
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" disabled={isLoading} className="flex-1">
