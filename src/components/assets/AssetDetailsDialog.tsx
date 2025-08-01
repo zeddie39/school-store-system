@@ -81,7 +81,7 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
                 {asset.name}
               </DialogTitle>
               <DialogDescription>
-                {asset.category.charAt(0).toUpperCase() + asset.category.slice(1)} Asset Details
+                {asset.category ? asset.category.charAt(0).toUpperCase() + asset.category.slice(1) : 'Asset'} Details
               </DialogDescription>
             </div>
             {onEdit && (
