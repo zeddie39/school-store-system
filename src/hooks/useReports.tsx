@@ -11,7 +11,7 @@ interface DepartmentReport {
   date: string;
   format: string;
   size: string;
-  department: string;
+  department?: string; // Make this optional since it may not exist in DB
   file_url?: string;
 }
 
@@ -53,13 +53,13 @@ export const useReports = (department?: string) => {
       if (reportsData && reportsData.length > 0) {
         const formattedReports: DepartmentReport[] = reportsData.map(report => ({
           id: report.id,
-          name: report.name,
-          type: report.type,
+          name: report.name || 'Untitled Report',
+          type: report.type || 'General Report',
           generated_by: report.generated_by || 'System',
-          date: new Date(report.date).toISOString().split('T')[0],
-          format: report.format,
-          size: report.size || 'Unknown',
-          department: getDepartmentFromName(report.name),
+          date: report.date ? new Date(report.date).toLocaleDateString() : new Date().toLocaleDateString(),
+          format: report.format || 'PDF',
+          size: report.size || 'Unknown size',
+          department: getDepartmentFromName(report.name || ''),
           file_url: report.file_url
         }));
 
