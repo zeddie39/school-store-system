@@ -58,9 +58,39 @@ export const useProcurementRequests = () => {
 
   const fetchRequests = async () => {
     try {
-      // For now, we'll return an empty array since the table might not be fully synced
-      // This will be updated when the types are available
-      setRequests([]);
+      // Mock data until types are synced
+      const mockRequests: ProcurementRequest[] = [
+        {
+          id: '1',
+          item_id: 'item-1',
+          supplier_id: 'supplier-1',
+          quantity: 50,
+          unit_price: 120,
+          total_amount: 6000,
+          required_date: '2024-01-15',
+          notes: 'Urgent requirement for new academic year',
+          whatsapp_sent: false,
+          status: 'pending',
+          created_by: 'user-1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          item: {
+            name: 'Exercise Books',
+            unit: 'pieces'
+          },
+          supplier: {
+            name: 'Office Plus Supplies',
+            whatsapp: '+254722334455',
+            contact_person: 'Mary Wanjiku'
+          }
+        }
+      ];
+      
+      setRequests(mockRequests);
+      toast({
+        title: "Procurement requests loaded",
+        description: "Demo requests loaded. Database integration pending.",
+      });
     } catch (error: any) {
       toast({
         title: "Error fetching procurement requests",
@@ -74,13 +104,23 @@ export const useProcurementRequests = () => {
 
   const createRequest = async (request: ProcurementRequestInsert) => {
     try {
-      // Mock for now - will be implemented when table is available
+      // Mock for now
+      const newRequest: ProcurementRequest = {
+        ...request,
+        id: Math.random().toString(36).substr(2, 9),
+        whatsapp_sent: false,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setRequests(prev => [newRequest, ...prev]);
       toast({
         title: "Procurement request created",
         description: "New procurement request has been created.",
       });
       
-      return { id: 'mock-id', ...request };
+      return newRequest;
     } catch (error: any) {
       toast({
         title: "Error creating procurement request",
@@ -93,6 +133,10 @@ export const useProcurementRequests = () => {
 
   const updateRequest = async (id: string, updates: ProcurementRequestUpdate) => {
     try {
+      setRequests(prev => prev.map(r => 
+        r.id === id ? { ...r, ...updates, updated_at: new Date().toISOString() } : r
+      ));
+
       toast({
         title: "Procurement request updated",
         description: "Request has been updated successfully.",

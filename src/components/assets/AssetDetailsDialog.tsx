@@ -123,6 +123,76 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
               </div>
             </div>
 
+            {/* Enhanced Valuation Info */}
+            <div className="p-4 bg-success/5 rounded-lg border border-success/10">
+              <h3 className="font-semibold text-success mb-3">Kenya Valuation Standards</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Value Type:</span>
+                  <Badge variant="outline" className="capitalize">
+                    {(asset as any).value_type || 'depreciation'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Classification:</span>
+                  <Badge variant="outline">
+                    {(asset as any).classification || 'Class I'}
+                  </Badge>
+                </div>
+                {(asset as any).decline_type && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Decline Type:</span>
+                    <Badge variant="outline" className="capitalize">
+                      {(asset as any).decline_type.replace(/_/g, ' ')}
+                    </Badge>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Standard:</span>
+                  <span className="font-medium text-sm">
+                    {(asset as any).valuation_standard || 'Kenya Asset Valuation Act 2023'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">IAS/IFRS:</span>
+                  <span className="font-medium text-sm">
+                    {(asset as any).ias_ifrs_standard || 'IAS 16'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Compliance Info */}
+            <div className="p-4 bg-warning/5 rounded-lg border border-warning/10">
+              <h3 className="font-semibold text-warning mb-3">Compliance Status</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">PFMA Compliant:</span>
+                  <Badge variant={(asset as any).pfma_compliant ? "default" : "destructive"}>
+                    {(asset as any).pfma_compliant ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Income Tax Applicable:</span>
+                  <Badge variant={(asset as any).income_tax_applicable ? "outline" : "secondary"}>
+                    {(asset as any).income_tax_applicable ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                {(asset as any).year_of_purchase && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Year of Purchase:</span>
+                    <span className="font-medium">{(asset as any).year_of_purchase}</span>
+                  </div>
+                )}
+                {(asset as any).rep_person && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Responsible Person:</span>
+                    <span className="font-medium">{(asset as any).rep_person}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="p-4 bg-muted/30 rounded-lg">
               <h3 className="font-semibold mb-3">Condition Status</h3>
               <Badge className={getConditionColor(asset.condition || 'good')}>
