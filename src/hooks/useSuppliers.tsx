@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-// Define types manually since the database types need to be regenerated
+// Define types for suppliers
 interface Supplier {
   id: string;
   name: string;
@@ -50,46 +51,21 @@ export const useSuppliers = () => {
 
   const fetchSuppliers = async () => {
     try {
-      // Mock data for demonstration - will be replaced with real data once types are updated
-      const mockSuppliers: Supplier[] = [
-        {
-          id: '1',
-          name: 'Tech Solutions Kenya',
-          contact_person: 'John Kamau',
-          phone: '+254712345678',
-          whatsapp: '+254712345678',
-          email: 'john@techsolutions.co.ke',
-          address: 'Westlands, Nairobi',
-          category: 'Technology & Electronics',
-          rating: 4.5,
-          is_active: true,
-          notes: 'Reliable supplier for computer equipment',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Office Plus Supplies',
-          contact_person: 'Mary Wanjiku',
-          phone: '+254722334455',
-          whatsapp: '+254722334455',
-          email: 'mary@officeplus.co.ke',
-          address: 'CBD, Nairobi',
-          category: 'Stationery & Office Supplies',
-          rating: 4.2,
-          is_active: true,
-          notes: 'Best prices for office stationery',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      
-      setSuppliers(mockSuppliers);
+      setLoading(true);
+      const { data, error } = await (supabase as any)
+        .from('suppliers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setSuppliers((data as unknown as Supplier[]) || []);
       toast({
         title: "Suppliers loaded",
-        description: "Demo suppliers loaded. Database integration pending.",
+        description: `${data?.length || 0} suppliers loaded from database.`,
       });
     } catch (error: any) {
+      console.error('Error fetching suppliers:', error);
       toast({
         title: "Error fetching suppliers",
         description: error.message,
@@ -102,15 +78,16 @@ export const useSuppliers = () => {
 
   const createSupplier = async (supplier: SupplierInsert) => {
     try {
-      const newSupplier: Supplier = {
-        ...supplier,
-        id: Math.random().toString(36).substr(2, 9),
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      setSuppliers(prev => [...prev, newSupplier]);
+      const { data, error } = await (supabase as any)
+        .from('suppliers')
+        .insert([supplier])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newSupplier = data as Supplier;
+      setSuppliers(prev => [newSupplier, ...prev]);
       toast({
         title: "Supplier created",
         description: "New supplier has been added successfully.",
@@ -118,6 +95,7 @@ export const useSuppliers = () => {
       
       return newSupplier;
     } catch (error: any) {
+      console.error('Error creating supplier:', error);
       toast({
         title: "Error creating supplier",
         description: error.message,
@@ -129,8 +107,18 @@ export const useSuppliers = () => {
 
   const updateSupplier = async (id: string, updates: SupplierUpdate) => {
     try {
+      const { data, error } = await (supabase as any)
+        .from('suppliers')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedSupplier = data as Supplier;
       setSuppliers(prev => prev.map(s => 
-        s.id === id ? { ...s, ...updates, updated_at: new Date().toISOString() } : s
+        s.id === id ? updatedSupplier : s
       ));
       
       toast({
@@ -138,8 +126,9 @@ export const useSuppliers = () => {
         description: "Supplier has been updated successfully.",
       });
       
-      return { id, ...updates };
+      return updatedSupplier;
     } catch (error: any) {
+      console.error('Error updating supplier:', error);
       toast({
         title: "Error updating supplier",
         description: error.message,
@@ -151,8 +140,15 @@ export const useSuppliers = () => {
 
   const deleteSupplier = async (id: string) => {
     try {
+      const { error } = await (supabase as any)
+        .from('suppliers')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) throw error;
+
       setSuppliers(prev => prev.map(s => 
-        s.id === id ? { ...s, is_active: false, updated_at: new Date().toISOString() } : s
+        s.id === id ? { ...s, is_active: false } : s
       ));
       
       toast({
@@ -160,6 +156,7 @@ export const useSuppliers = () => {
         description: "Supplier has been deactivated successfully.",
       });
     } catch (error: any) {
+      console.error('Error deactivating supplier:', error);
       toast({
         title: "Error deactivating supplier",
         description: error.message,
