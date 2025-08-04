@@ -87,7 +87,7 @@ const Reports: React.FC = () => {
     const { data, error } = await supabase
       .from('reports')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('date', { ascending: false });
     if (error) {
       setReportsError('Failed to load reports.');
       setRecentReports([]);
