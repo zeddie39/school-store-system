@@ -40,7 +40,10 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
     unit: 'pieces',
     minimum_stock: 10,
     store_id: selectedStore?.id || '',
-    supplier_id: ''
+    supplier_id: '',
+    unit_price: 0,
+    required_date: '',
+    procurement_notes: ''
   });
 
   // Update store_id when selectedStore changes
@@ -82,16 +85,22 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
           
           if (selectedSupplier && selectedStore) {
             // Send WhatsApp message to supplier
+            const totalAmount = formData.quantity * formData.unit_price;
             const message = `🏪 NEW PROCUREMENT REQUEST
 
 📋 Item Details:
 • Item: ${formData.name}
 • Quantity: ${formData.quantity} ${formData.unit}
+• Unit Price: KSH ${formData.unit_price.toLocaleString()}
+• Total Amount: KSH ${totalAmount.toLocaleString()}
 • Store: ${selectedStore.name}
 • Description: ${formData.description || 'N/A'}
+${formData.required_date ? `• Required Date: ${new Date(formData.required_date).toLocaleDateString()}` : ''}
+
+📝 Notes: ${formData.procurement_notes || 'None'}
 
 📞 Contact: ${profile?.full_name || 'Store Manager'}
-📧 Please confirm availability and provide quotation.
+📧 Please confirm availability and delivery timeline.
 
 Thank you for your service! 🙏`;
 
@@ -127,7 +136,10 @@ Thank you for your service! 🙏`;
         unit: 'pieces',
         minimum_stock: 10,
         store_id: selectedStore?.id || '',
-        supplier_id: ''
+        supplier_id: '',
+        unit_price: 0,
+        required_date: '',
+        procurement_notes: ''
       });
       
       onOpenChange(false);
@@ -264,6 +276,56 @@ Thank you for your service! 🙏`;
               You can send procurement requests to this supplier via WhatsApp
             </p>
           </div>
+
+          {/* Procurement Request Fields - Only show when supplier is selected */}
+          {formData.supplier_id && (
+            <div className="p-4 bg-muted/30 rounded-lg border space-y-4">
+              <h3 className="font-medium text-sm">Procurement Request Details</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="unit_price">Unit Price (KSH)</Label>
+                  <Input
+                    id="unit_price"
+                    type="number"
+                    step="0.01"
+                    value={formData.unit_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, unit_price: parseFloat(e.target.value) || 0 }))}
+                    min="0"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="required_date">Required Date</Label>
+                  <Input
+                    id="required_date"
+                    type="date"
+                    value={formData.required_date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, required_date: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="procurement_notes">Procurement Notes</Label>
+                <Textarea
+                  id="procurement_notes"
+                  value={formData.procurement_notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, procurement_notes: e.target.value }))}
+                  placeholder="Any special requirements or notes for the supplier"
+                  rows={2}
+                />
+              </div>
+
+              {formData.quantity > 0 && formData.unit_price > 0 && (
+                <div className="bg-success/10 p-3 rounded-lg border border-success/20">
+                  <p className="text-sm font-medium">
+                    Total Amount: KSH {(formData.quantity * formData.unit_price).toLocaleString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" disabled={isLoading} className="flex-1">
