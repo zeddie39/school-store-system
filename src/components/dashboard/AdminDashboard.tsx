@@ -231,6 +231,22 @@ const AdminDashboard: React.FC = () => {
           </div>
           {/* Existing StoreGrid */}
           <StoreGrid userRole="admin" />
+          
+          {/* Supplier Management Section */}
+          <div className="mt-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold">Supplier Management</h3>
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/suppliers')}
+              >
+                Manage Suppliers
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Manage suppliers for procurement requests and item sourcing.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

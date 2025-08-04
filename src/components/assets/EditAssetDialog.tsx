@@ -43,6 +43,7 @@ const EditAssetDialog: React.FC<EditAssetDialogProps> = ({
     value_type: 'depreciation',
     decline_type: '',
     classification: 'Class I',
+    year_of_purchase: new Date().getFullYear(),
     rep_person: '',
     income_tax_applicable: false,
     pfma_compliant: true,
@@ -70,6 +71,7 @@ const EditAssetDialog: React.FC<EditAssetDialogProps> = ({
         value_type: (asset as any).value_type || 'depreciation',
         decline_type: (asset as any).decline_type || '',
         classification: (asset as any).classification || 'Class I',
+        year_of_purchase: (asset as any).year_of_purchase || new Date().getFullYear(),
         rep_person: (asset as any).rep_person || '',
         income_tax_applicable: (asset as any).income_tax_applicable || false,
         pfma_compliant: (asset as any).pfma_compliant !== false,
@@ -284,6 +286,115 @@ const EditAssetDialog: React.FC<EditAssetDialogProps> = ({
                 <SelectContent>
                   <SelectItem value="depreciation">Depreciation</SelectItem>
                   <SelectItem value="appreciation">Appreciation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {formData.value_type === 'depreciation' && (
+            <div>
+              <Label htmlFor="decline_type">Decline Type</Label>
+              <Select 
+                value={formData.decline_type} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, decline_type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select decline type (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="industrial_building_decline">Industrial Building Decline</SelectItem>
+                  <SelectItem value="investment_decline">Investment Decline</SelectItem>
+                  <SelectItem value="wear_and_tear">Wear and Tear</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="year_of_purchase">Year of Purchase</Label>
+              <Input
+                id="year_of_purchase"
+                type="number"
+                value={formData.year_of_purchase}
+                onChange={(e) => setFormData(prev => ({ ...prev, year_of_purchase: parseInt(e.target.value) || new Date().getFullYear() }))}
+                min="1990"
+                max={new Date().getFullYear()}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="rep_person">Responsible Person</Label>
+              <Input
+                id="rep_person"
+                value={formData.rep_person}
+                onChange={(e) => setFormData(prev => ({ ...prev, rep_person: e.target.value }))}
+                placeholder="Person responsible for this asset"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm">Compliance & Standards</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="income_tax_applicable"
+                  checked={formData.income_tax_applicable}
+                  onChange={(e) => setFormData(prev => ({ ...prev, income_tax_applicable: e.target.checked }))}
+                  className="rounded"
+                />
+                <Label htmlFor="income_tax_applicable" className="text-sm">
+                  Income Tax Applicable
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="pfma_compliant"
+                  checked={formData.pfma_compliant}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pfma_compliant: e.target.checked }))}
+                  className="rounded"
+                />
+                <Label htmlFor="pfma_compliant" className="text-sm">
+                  PFMA Compliant
+                </Label>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="ias_ifrs_standard">IAS/IFRS Standard</Label>
+              <Select 
+                value={formData.ias_ifrs_standard} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, ias_ifrs_standard: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IAS 16">IAS 16 - Property, Plant and Equipment</SelectItem>
+                  <SelectItem value="IAS 40">IAS 40 - Investment Property</SelectItem>
+                  <SelectItem value="IFRS 16">IFRS 16 - Leases</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="valuation_standard">Valuation Standard</Label>
+              <Select 
+                value={formData.valuation_standard} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, valuation_standard: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Kenya Asset Valuation Act 2023">Kenya Asset Valuation Act 2023</SelectItem>
+                  <SelectItem value="International Valuation Standards">International Valuation Standards</SelectItem>
+                  <SelectItem value="RICS Valuation Standards">RICS Valuation Standards</SelectItem>
                 </SelectContent>
               </Select>
             </div>

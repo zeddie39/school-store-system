@@ -74,6 +74,51 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
         description: `${formData.name} has been added successfully.`,
       });
       
+      // If a supplier is selected and we want to send a procurement request
+      if (formData.supplier_id && formData.quantity > 0) {
+        try {
+          const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);
+          const selectedStore = stores.find(s => s.id === formData.store_id);
+          
+          if (selectedSupplier && selectedStore) {
+            // Send WhatsApp message to supplier
+            const message = `🏪 NEW PROCUREMENT REQUEST
+
+📋 Item Details:
+• Item: ${formData.name}
+• Quantity: ${formData.quantity} ${formData.unit}
+• Store: ${selectedStore.name}
+• Description: ${formData.description || 'N/A'}
+
+📞 Contact: ${profile?.full_name || 'Store Manager'}
+📧 Please confirm availability and provide quotation.
+
+Thank you for your service! 🙏`;
+
+            await fetch('/api/send-whatsapp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: selectedSupplier.whatsapp,
+                message: message
+              })
+            });
+            
+            toast({
+              title: "Procurement Request Sent",
+              description: `WhatsApp message sent to ${selectedSupplier.name}`,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to send WhatsApp message:', error);
+          toast({
+            title: "Warning",
+            description: "Item added but failed to send WhatsApp message to supplier.",
+            variant: "destructive",
+          });
+        }
+      }
+      
       // Reset form
       setFormData({
         name: '',

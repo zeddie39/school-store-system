@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import StoresPage from "./pages/Stores";
 import DepartmentReportPage from "./pages/DepartmentReportPage";
+import SupplierManagementPage from "./pages/SupplierManagementPage";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/register" element={<Register />} />
           <Route path="/stores" element={<StoresPage />} />
+          <Route path="/suppliers" element={<SupplierManagementPage />} />
           <Route path="/department-reports/:department" element={<DepartmentReportPage />} />
           <Route path="/departments/:id" element={<DepartmentPage />} />
           <Route path="/departments/:deptId" element={<DepartmentDetails />} />
