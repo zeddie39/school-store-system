@@ -60,65 +60,92 @@ export type Database = {
         Row: {
           added_by: string | null
           category: string
+          classification: string | null
           condition: string | null
           created_at: string
           current_value: number
+          decline_type: string | null
           depreciation_rate: number | null
           description: string | null
+          ias_ifrs_standard: string | null
           id: string
+          income_tax_applicable: boolean | null
           last_valuation_date: string | null
           location: string | null
           name: string
+          pfma_compliant: boolean | null
           purchase_date: string
           purchase_order_number: string | null
           purchase_price: number
           quantity: number
+          rep_person: string | null
           serial_number: string | null
           supplier: string | null
           updated_at: string
+          valuation_standard: string | null
+          value_type: string | null
           warranty_expiry: string | null
+          year_of_purchase: number | null
         }
         Insert: {
           added_by?: string | null
           category: string
+          classification?: string | null
           condition?: string | null
           created_at?: string
           current_value: number
+          decline_type?: string | null
           depreciation_rate?: number | null
           description?: string | null
+          ias_ifrs_standard?: string | null
           id?: string
+          income_tax_applicable?: boolean | null
           last_valuation_date?: string | null
           location?: string | null
           name: string
+          pfma_compliant?: boolean | null
           purchase_date: string
           purchase_order_number?: string | null
           purchase_price: number
           quantity?: number
+          rep_person?: string | null
           serial_number?: string | null
           supplier?: string | null
           updated_at?: string
+          valuation_standard?: string | null
+          value_type?: string | null
           warranty_expiry?: string | null
+          year_of_purchase?: number | null
         }
         Update: {
           added_by?: string | null
           category?: string
+          classification?: string | null
           condition?: string | null
           created_at?: string
           current_value?: number
+          decline_type?: string | null
           depreciation_rate?: number | null
           description?: string | null
+          ias_ifrs_standard?: string | null
           id?: string
+          income_tax_applicable?: boolean | null
           last_valuation_date?: string | null
           location?: string | null
           name?: string
+          pfma_compliant?: boolean | null
           purchase_date?: string
           purchase_order_number?: string | null
           purchase_price?: number
           quantity?: number
+          rep_person?: string | null
           serial_number?: string | null
           supplier?: string | null
           updated_at?: string
+          valuation_standard?: string | null
+          value_type?: string | null
           warranty_expiry?: string | null
+          year_of_purchase?: number | null
         }
         Relationships: []
       }
@@ -201,6 +228,7 @@ export type Database = {
           name: string
           quantity: number
           store_id: string
+          supplier_id: string | null
           unit: string
           updated_at: string | null
         }
@@ -213,6 +241,7 @@ export type Database = {
           name: string
           quantity?: number
           store_id: string
+          supplier_id?: string | null
           unit?: string
           updated_at?: string | null
         }
@@ -225,6 +254,7 @@ export type Database = {
           name?: string
           quantity?: number
           store_id?: string
+          supplier_id?: string | null
           unit?: string
           updated_at?: string | null
         }
@@ -241,6 +271,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -274,6 +311,72 @@ export type Database = {
           uploader?: string | null
         }
         Relationships: []
+      }
+      procurement_requests: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          item_id: string
+          notes: string | null
+          quantity: number
+          required_date: string | null
+          status: string | null
+          supplier_id: string
+          total_amount: number | null
+          unit_price: number | null
+          updated_at: string
+          whatsapp_sent: boolean | null
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          quantity: number
+          required_date?: string | null
+          status?: string | null
+          supplier_id: string
+          total_amount?: number | null
+          unit_price?: number | null
+          updated_at?: string
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          quantity?: number
+          required_date?: string | null
+          status?: string | null
+          supplier_id?: string
+          total_amount?: number | null
+          unit_price?: number | null
+          updated_at?: string
+          whatsapp_sent?: boolean | null
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_requests_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_requests_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       procurements: {
         Row: {
@@ -531,6 +634,54 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          address: string | null
+          category: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          rating: number | null
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          address?: string | null
+          category?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          address?: string | null
+          category?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -542,6 +693,18 @@ export type Database = {
           purchase_date: string
           depreciation_rate: number
           category: string
+        }
+        Returns: number
+      }
+      calculate_enhanced_asset_value: {
+        Args: {
+          purchase_price: number
+          purchase_date: string
+          depreciation_rate: number
+          category: string
+          value_type?: string
+          decline_type?: string
+          classification?: string
         }
         Returns: number
       }
