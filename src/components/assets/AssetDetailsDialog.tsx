@@ -28,7 +28,8 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
 }) => {
   if (!asset) return null;
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null) => {
+    if (amount === null || amount === undefined || isNaN(amount)) return 'KshNaN';
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
@@ -36,8 +37,11 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-KE', {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -45,7 +49,23 @@ const AssetDetailsDialog: React.FC<AssetDetailsDialogProps> = ({
   };
 
   const getDepreciationInfo = () => {
+    if (!asset.purchase_date || !asset.purchase_price || !asset.current_value) {
+      return {
+        yearsOwned: 'N/A',
+        totalDepreciation: 'N/A',
+        depreciationPercentage: 'N/A'
+      };
+    }
+    
     const purchaseDate = new Date(asset.purchase_date);
+    if (isNaN(purchaseDate.getTime())) {
+      return {
+        yearsOwned: 'N/A',
+        totalDepreciation: 'N/A',
+        depreciationPercentage: 'N/A'
+      };
+    }
+    
     const today = new Date();
     const yearsOwned = (today.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
     const totalDepreciation = asset.purchase_price - asset.current_value;

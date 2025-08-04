@@ -20,7 +20,7 @@ import { useStats } from '@/hooks/useStats';
 import { useActivities } from '@/hooks/useActivities';
 import { useReports } from '@/hooks/useReports';
 import { supabase } from '@/integrations/supabase/client';
-import AssetValuation from '../assets/AssetValuation';
+import AssetManagement from '../assets/AssetManagement';
 import AssetDetailsDialog from '../assets/AssetDetailsDialog';
 import DepartmentPasswordDialog from '../auth/DepartmentPasswordDialog';
 import BackButton from '../common/BackButton';
@@ -302,8 +302,8 @@ const AdminDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Asset Valuation */}
-      <AssetValuation />
+      {/* Asset Management */}
+      <AssetManagement />
 
       <AssetDetailsDialog
         open={assetDetailsDialog}
