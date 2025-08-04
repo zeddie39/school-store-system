@@ -108,19 +108,16 @@ export const useUsers = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      // Note: We can't actually delete users from auth.users via the client
-      // This would need to be done through the Supabase admin API
-      // For now, we'll just remove from profiles table
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      // Use the new database function to completely delete user
+      const { error } = await supabase.rpc('delete_user_completely', {
+        user_id_to_delete: userId
+      });
 
       if (error) {
-        console.error('Error deleting user profile:', error);
+        console.error('Error deleting user completely:', error);
         toast({
           title: "Error",
-          description: "Failed to delete user profile. Note: The user account may still exist in authentication.",
+          description: "Failed to delete user completely: " + error.message,
           variant: "destructive",
         });
         return false;
@@ -131,7 +128,7 @@ export const useUsers = () => {
 
       toast({
         title: "Success",
-        description: "User profile deleted successfully",
+        description: "User deleted completely from the system",
       });
 
       return true;

@@ -17,6 +17,7 @@ const UserManagement: React.FC = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [pendingUser, setPendingUser] = useState<any>(null);
   const [processingActions, setProcessingActions] = useState<Set<string>>(new Set());
 
   // Input validation helper
@@ -58,6 +59,63 @@ const UserManagement: React.FC = () => {
     const user = users.find(u => u.id === userId);
     if (user) {
       setSelectedUser(user);
+    }
+  };
+
+  const handleAssignDepartment = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setPendingUser(user);
+    }
+  };
+
+  const handleApprovePendingUser = async () => {
+    if (!pendingUser) return;
+
+    const validatedData = {
+      full_name: validateInput(pendingUser.full_name, 'name'),
+      department: validateInput(pendingUser.department, 'name'),
+      role: pendingUser.role
+    };
+
+    if (!validatedData.full_name || !validatedData.department) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide valid name and department.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await updateUser(pendingUser.id, validatedData);
+    if (success) {
+      setPendingUser(null);
+      toast({
+        title: "User Approved",
+        description: "User has been successfully assigned to department.",
+      });
+    }
+  };
+
+  const handleRejectPendingUser = async () => {
+    if (!pendingUser) return;
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to reject and delete user ${pendingUser.full_name}? This action cannot be undone.`
+    );
+    
+    if (confirmDelete) {
+      setProcessingActions(prev => new Set(prev).add(`delete-${pendingUser.id}`));
+      const success = await deleteUser(pendingUser.id);
+      setProcessingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(`delete-${pendingUser.id}`);
+        return newSet;
+      });
+      
+      if (success) {
+        setPendingUser(null);
+      }
     }
   };
 
@@ -144,7 +202,7 @@ const UserManagement: React.FC = () => {
                   </div>
                   <Button 
                     size="sm" 
-                    onClick={() => handleEditUser(user.id)}
+                    onClick={() => handleAssignDepartment(user.id)}
                     className="bg-orange-600 hover:bg-orange-700"
                   >
                     Assign Department
@@ -272,6 +330,85 @@ const UserManagement: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Assign Department Dialog */}
+      {pendingUser && (
+        <Dialog open={!!pendingUser} onOpenChange={() => setPendingUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign User to Department</DialogTitle>
+              <DialogDescription>
+                Review and approve this user's registration by assigning them to a department
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium mb-2">User Information</h4>
+                <p><strong>Name:</strong> {pendingUser.full_name}</p>
+                <p><strong>Email:</strong> {pendingUser.email}</p>
+              </div>
+              <div>
+                <Label htmlFor="assign-name">Full Name</Label>
+                <Input
+                  id="assign-name"
+                  value={pendingUser.full_name}
+                  onChange={(e) => setPendingUser(prev => prev ? { ...prev, full_name: validateInput(e.target.value, 'name') } : null)}
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <Label htmlFor="assign-department">Department *</Label>
+                <Input
+                  id="assign-department"
+                  value={pendingUser.department || ''}
+                  onChange={(e) => setPendingUser(prev => prev ? { ...prev, department: validateInput(e.target.value, 'name') } : null)}
+                  placeholder="Enter department name..."
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <Label htmlFor="assign-role">Role *</Label>
+                <Select 
+                  value={pendingUser.role} 
+                  onValueChange={(value) => setPendingUser(prev => prev ? { ...prev, role: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="teacher">Department Teacher</SelectItem>
+                    <SelectItem value="storekeeper">Store Keeper</SelectItem>
+                    <SelectItem value="procurement_officer">Procurement Officer</SelectItem>
+                    <SelectItem value="bursar">Bursar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleApprovePendingUser} 
+                  className="flex-1"
+                  disabled={!pendingUser.department?.trim()}
+                >
+                  Approve & Assign
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleRejectPendingUser} 
+                  className="flex-1"
+                  disabled={processingActions.has(`delete-${pendingUser.id}`)}
+                >
+                  {processingActions.has(`delete-${pendingUser.id}`) ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Reject & Delete'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit User Dialog */}
       {selectedUser && (

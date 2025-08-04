@@ -708,6 +708,10 @@ export type Database = {
         }
         Returns: number
       }
+      delete_user_completely: {
+        Args: { user_id_to_delete: string }
+        Returns: boolean
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
