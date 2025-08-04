@@ -8,6 +8,7 @@ import { useAssets } from '@/hooks/useAssets';
 import { useAuth } from '@/hooks/useAuth';
 import AssetDetailsDialog from './AssetDetailsDialog';
 import AddAssetDialog from './AddAssetDialog';
+import EditAssetDialog from './EditAssetDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type Asset = Database['public']['Tables']['assets']['Row'];
@@ -18,6 +19,7 @@ const AssetValuation: React.FC = () => {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -289,14 +291,20 @@ const AssetValuation: React.FC = () => {
         onOpenChange={setDetailsDialogOpen}
         asset={selectedAsset}
         onEdit={profile?.role === 'admin' ? (asset) => {
-          // Handle edit - could open edit dialog here
-          console.log('Edit asset:', asset);
+          setSelectedAsset(asset);
+          setEditDialogOpen(true);
         } : undefined}
       />
 
       <AddAssetDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
+      />
+
+      <EditAssetDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        asset={selectedAsset}
       />
     </div>
   );

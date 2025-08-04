@@ -58,39 +58,41 @@ export const useProcurementRequests = () => {
 
   const fetchRequests = async () => {
     try {
-      // Mock data until types are synced
-      const mockRequests: ProcurementRequest[] = [
-        {
-          id: '1',
-          item_id: 'item-1',
-          supplier_id: 'supplier-1',
-          quantity: 50,
-          unit_price: 120,
-          total_amount: 6000,
-          required_date: '2024-01-15',
-          notes: 'Urgent requirement for new academic year',
-          whatsapp_sent: false,
-          status: 'pending',
-          created_by: 'user-1',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          item: {
-            name: 'Exercise Books',
-            unit: 'pieces'
-          },
-          supplier: {
-            name: 'Office Plus Supplies',
-            whatsapp: '+254722334455',
-            contact_person: 'Mary Wanjiku'
-          }
-        }
-      ];
+      // Use procurements table for now - this is the actual table in DB
+      const { data, error } = await supabase
+        .from('procurements')
+        .select(`
+          *,
+          item:items(name, unit)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
       
-      setRequests(mockRequests);
-      toast({
-        title: "Procurement requests loaded",
-        description: "Demo requests loaded. Database integration pending.",
-      });
+      // Transform to match our interface
+      const transformedData = data?.map(item => ({
+        id: item.id,
+        item_id: item.item_id,
+        supplier_id: 'temp-supplier',
+        quantity: item.quantity,
+        unit_price: item.unit_cost,
+        total_amount: item.total_cost,
+        required_date: item.procurement_date,
+        notes: `Procurement by ${item.supplier || 'Unknown'}`,
+        whatsapp_sent: false,
+        status: 'completed',
+        created_by: item.procured_by,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        item: item.item,
+        supplier: {
+          name: item.supplier || 'Unknown',
+          whatsapp: '+254700000000',
+          contact_person: 'N/A'
+        }
+      })) || [];
+      
+      setRequests(transformedData);
     } catch (error: any) {
       toast({
         title: "Error fetching procurement requests",
@@ -104,23 +106,30 @@ export const useProcurementRequests = () => {
 
   const createRequest = async (request: ProcurementRequestInsert) => {
     try {
-      // Mock for now
-      const newRequest: ProcurementRequest = {
-        ...request,
-        id: Math.random().toString(36).substr(2, 9),
-        whatsapp_sent: false,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // Create as procurement record for now
+      const { data, error } = await supabase
+        .from('procurements')
+        .insert({
+          item_id: request.item_id,
+          procured_by: request.created_by,
+          quantity: request.quantity,
+          unit_cost: request.unit_price,
+          total_cost: request.total_amount,
+          supplier: 'TBD',
+          procurement_date: request.required_date
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
       
-      setRequests(prev => [newRequest, ...prev]);
+      await fetchRequests(); // Refresh the list
       toast({
         title: "Procurement request created",
         description: "New procurement request has been created.",
       });
       
-      return newRequest;
+      return data;
     } catch (error: any) {
       toast({
         title: "Error creating procurement request",
@@ -133,16 +142,26 @@ export const useProcurementRequests = () => {
 
   const updateRequest = async (id: string, updates: ProcurementRequestUpdate) => {
     try {
-      setRequests(prev => prev.map(r => 
-        r.id === id ? { ...r, ...updates, updated_at: new Date().toISOString() } : r
-      ));
+      const { data, error } = await supabase
+        .from('procurements')
+        .update({
+          quantity: updates.quantity,
+          unit_cost: updates.unit_price,
+          total_cost: updates.total_amount
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
+      if (error) throw error;
+      
+      await fetchRequests(); // Refresh the list
       toast({
         title: "Procurement request updated",
         description: "Request has been updated successfully.",
       });
       
-      return { id, ...updates };
+      return data;
     } catch (error: any) {
       toast({
         title: "Error updating procurement request",
