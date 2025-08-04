@@ -24,6 +24,7 @@ import AssetManagement from '../assets/AssetManagement';
 import AssetDetailsDialog from '../assets/AssetDetailsDialog';
 import DepartmentPasswordDialog from '../auth/DepartmentPasswordDialog';
 import BackButton from '../common/BackButton';
+import UserManagement from '../admin/UserManagement';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();

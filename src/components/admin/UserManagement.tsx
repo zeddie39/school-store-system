@@ -45,6 +45,15 @@ const UserManagement: React.FC = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // Separate pending users (those without department or with minimal role assignment)
+  const pendingUsers = users.filter(user => 
+    !user.department || user.department === 'N/A' || user.department === 'No Department'
+  );
+
+  const activeUsers = users.filter(user => 
+    user.department && user.department !== 'N/A' && user.department !== 'No Department'
+  );
+
   const handleEditUser = (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (user) {
@@ -113,6 +122,45 @@ const UserManagement: React.FC = () => {
         </p>
       </div>
 
+      {/* Pending Users Alert */}
+      {pendingUsers.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <UserPlus className="w-5 h-5" />
+              Pending User Approvals ({pendingUsers.length})
+            </CardTitle>
+            <CardDescription className="text-orange-700">
+              These users have registered but need department assignment and role confirmation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingUsers.slice(0, 3).map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div>
+                    <p className="font-medium">{user.full_name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleEditUser(user.id)}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    Assign Department
+                  </Button>
+                </div>
+              ))}
+              {pendingUsers.length > 3 && (
+                <p className="text-sm text-muted-foreground text-center">
+                  And {pendingUsers.length - 3} more users awaiting approval...
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -172,8 +220,10 @@ const UserManagement: React.FC = () => {
       {/* Users List */}
       <Card>
         <CardHeader>
-          <CardTitle>System Users ({filteredUsers.length})</CardTitle>
-          <CardDescription>Manage all users in the system</CardDescription>
+          <CardTitle>All System Users ({filteredUsers.length})</CardTitle>
+          <CardDescription>
+            Active Users: {activeUsers.length} • Pending Approval: {pendingUsers.length}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -186,10 +236,13 @@ const UserManagement: React.FC = () => {
                         <p className="font-medium">{user.full_name}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
-                      <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
+                       <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
                         {user.status}
                       </Badge>
                       <Badge variant="outline">{user.role}</Badge>
+                      {(!user.department || user.department === 'N/A' || user.department === 'No Department') && (
+                        <Badge variant="destructive">Needs Department</Badge>
+                      )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
                       <span>Department: {user.department}</span>

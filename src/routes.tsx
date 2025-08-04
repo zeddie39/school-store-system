@@ -9,6 +9,7 @@ import StoreDepartmentPage from '@/pages/StoreDepartmentPage';
 import DepartmentReportPage from '@/pages/DepartmentReportPage';
 import NotFound from '@/pages/NotFound';
 import SupplierManagementPage from '@/pages/SupplierManagementPage';
+import AdminPage from '@/pages/AdminPage';
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
   {
     path: '/suppliers',
     element: <SupplierManagementPage />,
+  },
+  {
+    path: '/admin',
+    element: <AdminPage />,
   },
   {
     path: '/departments/:departmentId',
